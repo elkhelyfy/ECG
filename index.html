@@ -1,0 +1,291 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ECG Onde par Onde</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Plateforme interactive pour comprendre et lire l'électrocardiogramme : machine ECG, modèle mental, méthode de lecture, atlas de tracés et entraînement.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/app.css?v=3">
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#machine" aria-label="Onde par onde, accueil">
+      <svg viewBox="0 0 48 24" aria-hidden="true"><path d="M0 14 H12 L15 10 L18 14 H21 L24 3 L27 21 L30 14 H36 L40 9 L44 14 H48"/></svg>
+      <span>Onde par onde</span>
+    </a>
+    <nav class="tabs" aria-label="Ateliers">
+      <a href="#machine" data-view="machine"><span class="tn">1</span>La machine</a>
+      <a href="#modele" data-view="modele"><span class="tn">2</span>Du cœur au tracé</a>
+      <a href="#methode" data-view="methode"><span class="tn">3</span>Méthode</a>
+      <a href="#atlas" data-view="atlas"><span class="tn">4</span>Atlas</a>
+      <a href="#quiz" data-view="quiz"><span class="tn">5</span>Entraînement</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 1. MACHINE ============ -->
+  <section class="view" id="view-machine">
+    <div class="wrap">
+      <div class="intro">
+        <p class="eyebrow">Atelier 1 · L’appareil</p>
+        <h1>Comprendre l’ECG, onde par onde</h1>
+        <p class="lede">L’électrocardiographe mesure, à la surface de la peau, des différences de potentiel de l’ordre du millivolt créées par le cœur. Choisissez un patient, tournez le sélecteur de dérivation et regardez le tracé s’imprimer.</p>
+      </div>
+
+      <div class="bench">
+        <div class="device">
+          <div class="dev-head">
+            <span class="dev-brand">CARDIO·12</span>
+            <span class="dev-model">Électrocardiographe 12 dérivations</span>
+            <span class="leds"><i class="led on" title="Secteur"></i><i class="led pulse" title="Patient connecté"></i></span>
+          </div>
+          <div class="dev-body">
+            <div class="screen">
+              <canvas id="mon" aria-label="Moniteur : trois dérivations en temps réel"></canvas>
+              <div class="hud">
+                <div class="hr"><span class="heart" id="monHeart" aria-hidden="true">♥</span><b id="monHR">--</b><small>/min</small></div>
+                <div class="hud-meta" id="monMeta"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="knob-wrap">
+                <svg id="knob" viewBox="0 0 200 200" tabindex="0" role="slider" aria-label="Sélecteur de dérivation (flèches gauche et droite)"></svg>
+                <span class="ctl-label">Dérivation</span>
+              </div>
+              <div class="ctl-grid">
+                <label class="prog"><span class="ctl-label">Patient simulé</span><select id="mRhythm"></select></label>
+                <div class="ctl"><span class="ctl-label">Vitesse du papier</span>
+                  <div class="seg" id="spd"><button data-v="25" aria-pressed="true">25 mm/s</button><button data-v="50" aria-pressed="false">50 mm/s</button></div></div>
+                <div class="ctl"><span class="ctl-label">Amplitude</span>
+                  <div class="seg" id="gain"><button data-v="5" aria-pressed="false">5</button><button data-v="10" aria-pressed="true">10</button><button data-v="20" aria-pressed="false">20 mm/mV</button></div></div>
+                <div class="keys">
+                  <button class="key" id="kRun" aria-pressed="true">Pause</button>
+                  <button class="key" id="kCal">Étalonnage 1 mV</button>
+                  <button class="key" id="kFilter" aria-pressed="true">Filtre 50 Hz</button>
+                  <button class="key" id="kArtef" aria-pressed="false">Artéfacts</button>
+                  <button class="key" id="kSound" aria-pressed="false">Bip QRS</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="printer">
+            <canvas id="strip" aria-label="Papier imprimé"></canvas>
+          </div>
+          <p class="lead-info" id="leadInfo"></p>
+        </div>
+
+        <div class="patient">
+          <div class="patient-head">
+            <h2>Le patient et ses 10 électrodes</h2>
+            <p class="muted">Touchez une électrode pour voir sa position.</p>
+          </div>
+          <svg id="patientSvg" viewBox="0 0 360 470" role="group" aria-label="Schéma du patient et des électrodes"></svg>
+          <div class="elec-card" id="elecCard" aria-live="polite"></div>
+          <button class="key wide" id="kSwap" aria-pressed="false">Inverser bras droit / bras gauche</button>
+          <p class="swap-note" id="swapNote" hidden>Électrodes inversées : DI devient entièrement négatif et aVR positif, mais V1 à V6 ne changent pas. Regardez DI sur le moniteur.</p>
+        </div>
+      </div>
+
+      <div class="facts">
+        <article class="fact">
+          <h3>Lire le papier</h3>
+          <svg class="ruler" viewBox="0 0 285 150" role="img" aria-label="Un grand carreau de 5 mm subdivisé en petits carreaux de 1 mm">
+            <defs><pattern id="mmGrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0 H0 V20" class="r-minor"/></pattern></defs>
+            <rect x="0" y="0" width="285" height="150" fill="url(#mmGrid)" class="r-paper"/>
+            <rect x="60" y="20" width="100" height="100" class="r-big"/>
+            <rect x="60" y="100" width="20" height="20" class="r-small"/>
+            <path d="M60 132 H160" class="r-dim"/><text x="110" y="146" text-anchor="middle">5 mm = 0,20 s</text>
+            <path d="M172 20 V120" class="r-dim"/><text x="178" y="74">5 mm = 0,5 mV</text>
+            <path d="M60 126 H80" class="r-dim acc"/><text x="20" y="114" class="acc">1 mm</text><text x="20" y="128" class="acc">40 ms</text>
+          </svg>
+          <p>À 25 mm/s et 10 mm/mV : un petit carreau vaut <b>40 ms</b> en largeur et <b>0,1 mV</b> en hauteur. Un grand carreau vaut <b>200 ms</b> et <b>0,5 mV</b>. Cinq grands carreaux font une seconde.</p>
+        </article>
+        <article class="fact">
+          <h3>10 électrodes, 12 dérivations</h3>
+          <p>Une dérivation n’est pas un fil : c’est une <b>différence de potentiel</b> entre deux points, un point de vue sur le cœur.</p>
+          <ul>
+            <li><b>Plan frontal</b> (4 électrodes des membres) : DI, DII, DIII bipolaires ; aVR, aVL, aVF unipolaires. Loi d’Einthoven : DII = DI + DIII.</li>
+            <li><b>Plan horizontal</b> (6 électrodes thoraciques) : V1 à V6, du ventricule droit vers la paroi latérale gauche.</li>
+          </ul>
+          <p class="mnemo">Membres : « le soleil sur l’herbe, le feu sur le charbon » : jaune au-dessus du vert à gauche, rouge au-dessus du noir à droite.</p>
+        </article>
+        <article class="fact">
+          <h3>La règle d’or</h3>
+          <p>Un influx qui <b>se dirige vers</b> l’électrode positive d’une dérivation inscrit une onde <b>positive</b>. S’il <b>s’en éloigne</b>, l’onde est <b>négative</b>. S’il passe perpendiculairement, l’onde est <b>isodiphasique</b>.</p>
+          <p>Tout l’ECG découle de cette règle : l’atelier 2 la montre en mouvement.</p>
+          <a class="btn" href="#modele">Voir le cœur battre</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. MODÈLE MENTAL ============ -->
+  <section class="view" id="view-modele" hidden>
+    <div class="wrap">
+      <div class="intro">
+        <p class="eyebrow">Atelier 2 · Le modèle mental</p>
+        <h2 class="h1">Du cœur au tracé</h2>
+        <p class="lede">Une onde de l’ECG est l’ombre du vecteur électrique du cœur projetée sur l’axe d’une dérivation. Suivez l’influx du nœud sinusal au réseau de Purkinje, au ralenti, et regardez chaque onde naître.</p>
+      </div>
+      <div class="mm-grid">
+        <div class="card mm-heart">
+          <svg id="heartSvg" viewBox="-96 0 600 440" role="img" aria-label="Cœur en coupe avec le système de conduction et le vecteur électrique instantané"></svg>
+          <div class="mm-legend">
+            <span><i class="sw act"></i>Myocarde dépolarisé</span>
+            <span><i class="sw vec"></i>Vecteur instantané</span>
+            <span><i class="sw pos"></i>Projection vers la dérivation (onde +)</span>
+            <span><i class="sw neg"></i>Projection opposée (onde −)</span>
+          </div>
+          <div class="leadpick"><span class="ctl-label">Dérivation observée</span><div class="seg sm" id="mmLeads"></div></div>
+        </div>
+        <div class="mm-side">
+          <div class="mm-trace"><canvas id="mmTrace" aria-label="Tracé en cours de construction"></canvas></div>
+          <div class="mm-controls">
+            <button class="btn ghost" id="mmPrev" aria-label="Phase précédente">‹</button>
+            <button class="btn" id="mmPlay">Pause</button>
+            <button class="btn ghost" id="mmNext" aria-label="Phase suivante">›</button>
+            <input type="range" id="mmScrub" min="0" max="820" value="0" aria-label="Position dans le cycle">
+            <span class="num" id="mmTime">0 ms</span>
+            <label class="sel-sm"><span class="sr">Vitesse</span><select id="mmSpeed"><option value="0.1">× 0,1</option><option value="0.25" selected>× 0,25</option><option value="0.5">× 0,5</option><option value="1">× 1</option></select></label>
+          </div>
+          <ol class="phases" id="mmPhases"></ol>
+          <div class="phase-card" id="mmPhaseCard" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="vlab">
+        <div class="vlab-head">
+          <div>
+            <p class="eyebrow">Laboratoire des vecteurs</p>
+            <h3 id="vlabTitle">Faites tourner l’axe du QRS</h3>
+            <p class="muted">Faites glisser la flèche dans le plan frontal (DI à aVF) ou horizontal (V1 à V6). Les 12 dérivations se recalculent.</p>
+          </div>
+          <div class="seg" id="vlabMode"><button data-m="axe" aria-pressed="true">Axe du QRS</button><button data-m="lesion" aria-pressed="false">Vecteur de lésion (ST)</button></div>
+        </div>
+        <div class="vlab-body">
+          <div class="wheels">
+            <figure><svg id="wheelF" viewBox="-130 -130 260 260" role="img" aria-label="Plan frontal"></svg><figcaption>Plan frontal</figcaption></figure>
+            <figure><svg id="wheelH" viewBox="-130 -130 260 260" role="img" aria-label="Plan horizontal"></svg><figcaption>Plan horizontal (vu d’en haut)</figcaption></figure>
+          </div>
+          <div class="vlab-right">
+            <div class="chips" id="vlabPresets"></div>
+            <div class="minis" id="vlabMinis"></div>
+            <div class="vlab-read" id="vlabRead" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. MÉTHODE ============ -->
+  <section class="view" id="view-methode" hidden>
+    <div class="wrap">
+      <div class="intro">
+        <p class="eyebrow">Atelier 3 · La méthode</p>
+        <h2 class="h1">Lire un ECG en 10 étapes</h2>
+        <p class="lede">Toujours dans le même ordre, sur chaque tracé, même quand le diagnostic saute aux yeux. C’est l’ordre qui évite de rater le deuxième diagnostic.</p>
+      </div>
+      <div class="method">
+        <ol class="steps" id="steps"></ol>
+        <div class="step-main">
+          <div class="step-card" id="stepCard"></div>
+          <div class="scroll-x"><div id="methodPaper"></div></div>
+          <p class="hint">Glissez sur le tracé pour mesurer avec le compas électronique.</p>
+        </div>
+      </div>
+
+      <h3 class="tools-title">Outils de calcul</h3>
+      <div class="tools">
+        <article class="tool tool-wide">
+          <h4>Fréquence : la règle des 300</h4>
+          <label class="range-row" for="fcRange"><span>Fréquence cardiaque</span><input type="range" id="fcRange" min="30" max="220" value="75" step="1"></label>
+          <p id="fcOut" class="out"></p>
+          <div class="scroll-x"><div id="fcPaper"></div></div>
+          <p class="muted">Rythme irrégulier : compter les QRS sur la bande de 10 secondes et multiplier par 6.</p>
+        </article>
+        <article class="tool">
+          <h4>QT corrigé</h4>
+          <div class="form">
+            <label for="qtIn">QT mesuré (ms)</label><input type="number" id="qtIn" value="420" min="200" max="800" inputmode="numeric">
+            <label for="qtHr">Fréquence (/min)</label><input type="number" id="qtHr" value="75" min="20" max="250" inputmode="numeric">
+            <label for="qtSex">Sexe</label><select id="qtSex"><option value="h">Homme</option><option value="f">Femme</option></select>
+          </div>
+          <div id="qtOut" class="out"></div>
+        </article>
+        <article class="tool">
+          <h4>Axe en 10 secondes</h4>
+          <div class="ax-row"><span>QRS en DI</span><div class="seg sm" data-ax="I"><button data-v="1" aria-pressed="true">Positif</button><button data-v="-1" aria-pressed="false">Négatif</button></div></div>
+          <div class="ax-row"><span>QRS en aVF</span><div class="seg sm" data-ax="aVF"><button data-v="1" aria-pressed="true">Positif</button><button data-v="-1" aria-pressed="false">Négatif</button></div></div>
+          <div class="ax-row" id="axII" hidden><span>QRS en DII</span><div class="seg sm" data-ax="II"><button data-v="1" aria-pressed="true">Positif</button><button data-v="-1" aria-pressed="false">Négatif</button></div></div>
+          <p id="axOut" class="out"></p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. ATLAS ============ -->
+  <section class="view" id="view-atlas" hidden>
+    <div class="wrap">
+      <div class="intro compact">
+        <p class="eyebrow">Atelier 4 · L’atlas</p>
+        <h2 class="h1"><span id="atlasCount">37</span> tracés commentés</h2>
+      </div>
+      <div class="atlas">
+        <aside class="atlas-nav">
+          <label class="sr" for="atlasSearch">Rechercher un tracé</label>
+          <input type="search" id="atlasSearch" placeholder="Rechercher : bloc, ST, potassium…">
+          <label class="sr" for="atlasSelect">Choisir un tracé</label>
+          <select id="atlasSelect" class="atlas-select"></select>
+          <div id="atlasList" class="atlas-list"></div>
+        </aside>
+        <div class="atlas-main">
+          <header class="case-head" id="caseHead"></header>
+          <div class="toolbar" id="atlasTools"></div>
+          <div class="scroll-x"><div id="atlasPaper"></div></div>
+          <p class="hint">Glissez sur le tracé pour mesurer un intervalle (ms, fréquence) ou une amplitude (mV).</p>
+          <div class="fiche" id="atlasFiche"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. QUIZ ============ -->
+  <section class="view" id="view-quiz" hidden>
+    <div class="wrap">
+      <div class="intro compact">
+        <p class="eyebrow">Atelier 5 · L’entraînement</p>
+        <h2 class="h1">Quel est votre diagnostic ?</h2>
+      </div>
+      <div class="quiz-bar">
+        <div class="stats">
+          <div><span class="ctl-label">Score</span><b class="num" id="qScore">0 / 0</b></div>
+          <div><span class="ctl-label">Réussite</span><b class="num" id="qPct">—</b></div>
+          <div><span class="ctl-label">Série</span><b class="num" id="qStreak">0</b></div>
+          <div><span class="ctl-label">Record</span><b class="num" id="qBest">0</b></div>
+        </div>
+        <label class="sel-sm"><span class="ctl-label">Thème</span><select id="quizCat"><option value="all">Tous les tracés</option></select></label>
+        <button class="btn ghost" id="quizReset">Remettre à zéro</button>
+      </div>
+      <div class="toolbar" id="quizTools"></div>
+      <div class="scroll-x"><div id="quizPaper"></div></div>
+      <div class="quiz-q">
+        <div class="choices" id="choices"></div>
+        <div class="feedback" id="feedback" hidden aria-live="polite"></div>
+        <button class="btn" id="quizNext">Passer</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot"><div class="wrap"><p>Tracés générés par un modèle dipolaire du cœur à visée pédagogique : ils reproduisent les critères diagnostiques, pas la variabilité d’un vrai patient. Outil d’apprentissage, pas de diagnostic.</p></div></footer>
+
+<script charset="utf-8" src="js/engine.js?v=3"></script>
+<script charset="utf-8" src="js/cases.js?v=3"></script>
+<script charset="utf-8" src="js/paper.js?v=3"></script>
+<script charset="utf-8" src="js/machine.js?v=3"></script>
+<script charset="utf-8" src="js/heart.js?v=3"></script>
+<script charset="utf-8" src="js/method.js?v=3"></script>
+<script charset="utf-8" src="js/atlas.js?v=3"></script>
+<script charset="utf-8" src="js/app.js?v=3"></script>
