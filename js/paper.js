@@ -29,7 +29,12 @@
     geom() {
       const rows = this.rows();
       const wmm = CAL_MM + PAPER_MM + 3;
-      const avail = (this.host.parentElement || this.host).clientWidth || 900;
+      // largeur intérieure réelle, arrondie vers le bas : clientWidth arrondit au pixel le plus proche et,
+      // avec un zoom d'affichage (125 %…), un tracé plus large de 0,4 px fait apparaître une barre de défilement.
+      // getComputedStyle().width donne la largeur de mise en page fractionnaire, insensible aux transform (animation d'entrée).
+      const el = this.host.parentElement || this.host, cs = getComputedStyle(el), px = p => parseFloat(cs[p]) || 0;
+      const inner = px('width') - (cs.boxSizing === 'border-box' ? px('borderLeftWidth') + px('borderRightWidth') + px('paddingLeft') + px('paddingRight') : 0);
+      const avail = Math.floor(inner) || 900;
       const k = Math.max(this.o.minK, avail / wmm);
       const hmm = TOP_MM + rows.length * this.o.rowH + 2;
       return { k, wmm, hmm, rows, W: Math.round(wmm * k), H: Math.round(hmm * k) };

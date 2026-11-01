@@ -143,5 +143,5 @@
     scoreUI(); next();
   }
 
-  root.Atlas = { init() { initAtlas(); initQuiz(); }, open, redraw() { ap && ap.draw(); qp && qp.draw(); } };
+  root.Atlas = { init() { initAtlas(); initQuiz(); }, open, fiche, tags, redraw() { ap && ap.draw(); qp && qp.draw(); } };
 })(window);

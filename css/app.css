@@ -565,6 +565,31 @@ p.out { display: block; line-height: 1.7; }
 .sv-big { font-size: 2.2rem; line-height: 1; font-weight: 600; }
 .sv-src { font-size: 0.82rem; }
 
+/* fiche ouverte sur place */
+.sv-dlg {
+  width: min(1100px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 48px); padding: 0;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--fg);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.55); overflow: hidden;
+}
+.sv-dlg[open] { display: flex; flex-direction: column; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+@starting-style { .sv-dlg[open] { opacity: 0; transform: scale(0.96); } }
+.sv-dlg::backdrop { background: rgba(10, 14, 16, 0.55); transition: opacity 200ms ease; }
+@starting-style { .sv-dlg[open]::backdrop { opacity: 0; } }
+html:has(.sv-dlg[open]) { overflow: hidden; }
+.sv-dlg-bar { display: flex; gap: 12px; align-items: start; justify-content: space-between; padding: 16px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.sv-dlg-head { display: grid; gap: 6px; min-width: 0; }
+.sv-dlg-head h2 { font-size: 1.35rem; }
+.sv-dlg-x {
+  flex: none; width: 40px; height: 40px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface);
+  font-size: 1rem; display: grid; place-items: center; transition: transform 160ms var(--ease-out), border-color 150ms ease;
+}
+.sv-dlg-x:active { transform: scale(0.95); }
+@media (hover: hover) and (pointer: fine) { .sv-dlg-x:hover { border-color: var(--fg); } }
+/* bloc et non grille : dans une grille à hauteur contrainte, le conteneur défilant du tracé serait écrasé à 0 */
+.sv-dlg-body { overflow: auto; overscroll-behavior: contain; padding: 16px 18px 20px; flex: 1 1 auto; min-height: 0; }
+.sv-dlg-body > * + * { margin-top: 12px; }
+.sv-dlg-body > .hint { margin-top: 6px; }
+
 @media (max-width: 1100px) {
   .sv-map { grid-template-columns: 1fr; }
   .sv-recos { grid-template-columns: repeat(2, minmax(0, 1fr)); }

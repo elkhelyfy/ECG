@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/app.css?v=4">
+<link rel="stylesheet" href="css/app.css?v=5">
 
 <header class="top">
   <div class="wrap top-in">
@@ -404,6 +404,18 @@
             <div class="sv-score" id="svScore" aria-live="polite"></div>
           </article>
         </div>
+        <dialog class="sv-dlg" id="svDialog" aria-labelledby="svDlgTitle">
+          <div class="sv-dlg-bar">
+            <div class="sv-dlg-head" id="svDlgHead"></div>
+            <button class="sv-dlg-x" id="svDlgClose" aria-label="Fermer la fiche">✕</button>
+          </div>
+          <div class="sv-dlg-body">
+            <div class="scroll-x"><div id="svDlgPaper"></div></div>
+            <p class="hint">Glissez sur le tracé pour mesurer un intervalle ou une amplitude.</p>
+            <div class="fiche" id="svDlgFiche"></div>
+            <a class="btn ghost" href="#atlas" id="svDlgAtlas" data-atlas>Ouvrir dans l’Atlas</a>
+          </div>
+        </dialog>
         <p class="sv-src muted">Sources : <a href="https://doi.org/10.1093/eurheartj/ehz467" target="_blank" rel="noopener">ESC 2019 TSV (Eur Heart J)</a> · <a href="https://doi.org/10.1093/eurheartj/ehae176" target="_blank" rel="noopener">ESC 2024 FA (Eur Heart J)</a> · <a href="https://www.msdmanuals.com/fr/professional/troubles-cardiovasculaires/arythmies-cardiaques-spécifiques/arythmies-supraventriculaires-ectopiques" target="_blank" rel="noopener">MSD Manuals</a>. Vérifier les doses et classes de recommandation dans les textes originaux.</p>
       </section>
     </div>
@@ -412,12 +424,12 @@
 
 <footer class="foot"><div class="wrap"><p>Tracés générés par un modèle dipolaire du cœur à visée pédagogique : ils reproduisent les critères diagnostiques, pas la variabilité d’un vrai patient. Outil d’apprentissage, pas de diagnostic.</p></div></footer>
 
-<script charset="utf-8" src="js/engine.js?v=4"></script>
-<script charset="utf-8" src="js/cases.js?v=4"></script>
-<script charset="utf-8" src="js/paper.js?v=4"></script>
-<script charset="utf-8" src="js/machine.js?v=4"></script>
-<script charset="utf-8" src="js/heart.js?v=4"></script>
-<script charset="utf-8" src="js/method.js?v=4"></script>
-<script charset="utf-8" src="js/atlas.js?v=4"></script>
-<script charset="utf-8" src="js/supra.js?v=4"></script>
-<script charset="utf-8" src="js/app.js?v=4"></script>
+<script charset="utf-8" src="js/engine.js?v=5"></script>
+<script charset="utf-8" src="js/cases.js?v=5"></script>
+<script charset="utf-8" src="js/paper.js?v=5"></script>
+<script charset="utf-8" src="js/machine.js?v=5"></script>
+<script charset="utf-8" src="js/heart.js?v=5"></script>
+<script charset="utf-8" src="js/method.js?v=5"></script>
+<script charset="utf-8" src="js/atlas.js?v=5"></script>
+<script charset="utf-8" src="js/supra.js?v=5"></script>
+<script charset="utf-8" src="js/app.js?v=5"></script>

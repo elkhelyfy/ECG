@@ -362,11 +362,55 @@
     score();
   }
 
+  /* =========================================================
+     Fiche complète ouverte sur place : on ne quitte pas l'atelier
+     ========================================================= */
+  let dlg, dlgPaper;
+  function closeFiche(instant) {
+    if (!dlg || !dlg.open || dlg.dataset.closing) return;
+    if (instant === true || reduceMotion() || !dlg.animate) { dlg.close(); return; }
+    dlg.dataset.closing = '1';
+    const finish = () => { if (!dlg.dataset.closing) return; delete dlg.dataset.closing; anim.cancel(); dlg.close(); };
+    // sortie plus rapide que l'entrée : le système répond, l'utilisateur n'attend pas
+    const anim = dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.97)' }],
+      { duration: 140, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' });
+    anim.finished.then(finish, finish);
+    // filet de sécurité : si le rendu est suspendu (onglet en arrière-plan), la fermeture ne doit pas dépendre de l'animation
+    setTimeout(finish, 220);
+  }
+  function openFiche(id) {
+    const c = LIB.byId(id);
+    if (!c) return;
+    if (!dlg) {
+      dlg = $('svDialog');
+      dlg.addEventListener('click', e => { if (e.target === dlg) closeFiche(); });
+      dlg.addEventListener('cancel', e => { e.preventDefault(); closeFiche(); });
+      $('svDlgClose').addEventListener('click', closeFiche);
+      $('svDlgAtlas').addEventListener('click', () => closeFiche(true));
+    }
+    $('svDlgHead').innerHTML = `<p class="eyebrow">${c.catLabel}</p><h2 id="svDlgTitle">${c.title}</h2>
+      <div class="tags">${root.Atlas.tags(c)}</div><p class="muted">${c.short}</p>`;
+    $('svDlgFiche').innerHTML = root.Atlas.fiche(c);
+    $('svDlgAtlas').dataset.case = id;
+    if (!dlg.open) dlg.showModal();
+    if (!dlgPaper) { dlgPaper = new root.Paper($('svDlgPaper'), { layout: '12' }); dlgPaper.annot = true; papers.push(dlgPaper); }
+    dlgPaper.set(E.render(c.spec(17)), c.marks);
+    dlg.querySelector('.sv-dlg-body').scrollTop = 0;
+  }
+
   let inited = false;
   function init() {
     if (inited) return;
     inited = true;
     initMap(); initRp(); initAdo(); algo(false); initTable(); initCalc();
+    // dans l'atelier, les liens « Fiche » ouvrent le panneau au lieu de basculer vers l'Atlas
+    $('view-supra').addEventListener('click', e => {
+      const a = e.target.closest('a[data-case]');
+      if (!a || a.hasAttribute('data-atlas')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openFiche(a.dataset.case);
+    });
   }
   root.Supra = { init, redraw() { papers.forEach(p => p.draw()); } };
 })(window);
