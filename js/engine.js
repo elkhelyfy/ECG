@@ -65,6 +65,17 @@
     normal: BASE,
     ectopicP: morph({ p: { comps: [C(0.03, 0.016, [0.08, -0.07, 0.05]), C(0.062, 0.016, [0.08, -0.05, -0.03])], dur: 0.1 } }),
     retro: morph({ p: { comps: [C(0.02, 0.012, [-0.03, -0.13, 0.06])], dur: 0.05 } }),
+    // P rétrograde lente et profonde (voie accessoire décrémentielle, PJRT)
+    retroDeep: morph({ p: { comps: [C(0.035, 0.019, [-0.05, -0.17, 0.06])], dur: 0.09 } }),
+    // P d'un foyer atrial bas : négative en inférieur, positive en DI
+    atrialP: morph({ p: { comps: [C(0.03, 0.016, [0.07, -0.12, 0.05]), C(0.065, 0.016, [0.06, -0.08, -0.02])], dur: 0.1 } }),
+    // 4e morphologie de P (tachycardie atriale multifocale) : étroite et pointue
+    mat3: morph({ p: { comps: [C(0.035, 0.013, [0.0, 0.2, 0.12])], dur: 0.08 } }),
+    // QRS entièrement pré-excité (TRAV antidromique, FA pré-excitée) : delta maximale
+    preex: morph({
+      qrs: { comps: [C(0.05, 0.022, [0.25, 0.45, 0.7], 0.03), C(0.105, 0.02, [0.35, 0.3, 0.25]), C(0.14, 0.01, [-0.1, -0.08, -0.1])], dur: 0.16 },
+      t: { comps: [C(0, 0.06, [-0.15, -0.3, -0.3], 0.045)] }, qtc: 0.44
+    }),
     pvc: morph({
       qrs: { comps: [C(0.04, 0.022, [0.25, 0.55, -0.7]), C(0.095, 0.022, [0.55, 0.35, -0.3])], dur: 0.15 },
       t: { comps: [C(0, 0.06, [-0.3, -0.35, 0.3], 0.045)] }, qtc: 0.44
@@ -188,6 +199,16 @@
       for (let i = 0; i < arr[0].length; i++) {
         const t = i / FS, ph = (((t - off) / per) % 1 + 1) % 1;
         const s = ph < 0.78 ? 0.45 - 1.45 * Math.pow(ph / 0.78, 1.4) : -1 + 1.45 * smooth((ph - 0.78) / 0.22);
+        for (let j = 0; j < L.length; j++) arr[j][i] += A[j] * s;
+      }
+    },
+    // macro-réentrée atriale atypique : ondulation continue, sans ligne isoélectrique, positive en inférieur
+    flutterAtyp(b, arr, L) {
+      const per = b.period || 0.24, off = b.offset || 0, v = b.v || [0.05, 0.16, 0.1];
+      const A = L.map(l => dot(l, v));
+      for (let i = 0; i < arr[0].length; i++) {
+        const ph = 2 * Math.PI * (i / FS - off) / per;
+        const s = 0.8 * Math.sin(ph) + 0.25 * Math.sin(2 * ph + 0.6);
         for (let j = 0; j < L.length; j++) arr[j][i] += A[j] * s;
       }
     },

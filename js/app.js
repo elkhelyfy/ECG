@@ -1,7 +1,7 @@
 /* Navigation entre ateliers, liens vers l'atlas, redessin au changement de thème. */
 (function () {
   'use strict';
-  const VIEWS = ['machine', 'modele', 'methode', 'atlas', 'quiz'];
+  const VIEWS = ['machine', 'modele', 'methode', 'atlas', 'quiz', 'supra'];
   const inited = {};
 
   function show(v) {
@@ -12,6 +12,7 @@
       inited[v] = true;
       if (v === 'modele') window.Heart.init();
       if (v === 'methode') window.Method.init();
+      if (v === 'supra') window.Supra.init();
       if (v === 'atlas' || v === 'quiz') { if (!inited.lib) { inited.lib = true; window.Atlas.init(); } }
     }
     redraw();
@@ -20,6 +21,7 @@
     window.Method && inited.methode && window.Method.redraw();
     window.Atlas && inited.lib && window.Atlas.redraw();
     window.Heart && inited.modele && window.Heart.refresh();
+    window.Supra && inited.supra && window.Supra.redraw();
   }
   document.addEventListener('click', e => {
     const a = e.target.closest('a[data-case]');

@@ -47,12 +47,13 @@
     };
   }
   function regularQRS(o) {
+    // o.retro : true (P collée au QRS) ou décalage en s (négatif = P avant le QRS) ; o.alt : alternance électrique
     return (r, D) => {
-      const ev = []; let t = o.start ?? (-0.2 + r() * 0.2);
+      const ev = []; let t = o.start ?? (-0.2 + r() * 0.2), n = 0;
       while (t < D + 0.5) {
-        ev.push({ type: 'QRS', t, m: o.m || 'normal' });
-        if (o.retro) ev.push({ type: 'P', t: t + 0.07, m: 'retro' });
-        t += o.rr;
+        ev.push({ type: 'QRS', t, m: o.m || 'normal', k: o.alt && n % 2 ? o.alt : 1 });
+        if (o.retro) ev.push({ type: 'P', t: t + (o.retro === true ? 0.07 : o.retro), m: o.rm || 'retro' });
+        t += o.rr; n++;
       }
       if (o.p) { let p = 0.12 + r() * 0.3; while (p < D + 0.5) { ev.push({ type: 'P', t: p, m: 'normal', conducted: false }); p += o.p; } }
       return ev;
@@ -83,6 +84,47 @@
     }
     return ev;
   }
+  // activité atriale ondes P par ondes P : pp, pr et morphologie fixes ou fonctions ; conduct(i, t) décide du passage AV
+  function atrial(o) {
+    const val = (v, i, r, d) => (typeof v === 'function' ? v(i, r) : (v ?? d));
+    return (r, D) => {
+      const ev = []; let t = o.start ?? (0.1 + r() * 0.2), i = 0;
+      while (t < D + 0.5) {
+        const pm = val(o.pm, i, r, 'normal'), pr = val(o.pr, i, r, 0.16);
+        if (!o.conduct || o.conduct(i, t)) {
+          ev.push({ type: 'P', t, m: pm, qrsT: t + pr });
+          ev.push({ type: 'QRS', t: t + pr, m: o.m || 'normal' });
+        } else ev.push({ type: 'P', t, m: pm, conducted: false });
+        t += val(o.pp, i, r, 0.8); i++;
+      }
+      return ev;
+    };
+  }
+  // flutter à conduction variable : ratio(t) = nombre d'ondes F par QRS
+  function flutterVar(o) {
+    return (r, D) => {
+      const ev = []; let n = 0, j = 0;
+      while (true) {
+        const t = o.off + n * o.per + o.delay;
+        if (t > D + 0.5) break;
+        ev.push({ type: 'QRS', t, m: 'normal' });
+        n += typeof o.ratio === 'function' ? o.ratio(t, j) : o.ratio[j % o.ratio.length];
+        j++;
+      }
+      return ev;
+    };
+  }
+  // FA pré-excitée : RR très courts et irréguliers, degré de pré-excitation variable
+  function preexAF(r, D) {
+    const ev = []; let t = 0.1 + r() * 0.2;
+    while (t < D + 0.5) {
+      const u = r();
+      ev.push({ type: 'QRS', t, m: u < 0.6 ? 'preex' : u < 0.85 ? 'wpw' : 'normal' });
+      t += 0.23 + r() * 0.3;
+    }
+    return ev;
+  }
+  const MAT = ['normal', 'ectopicP', 'atrialP', 'mat3'];
   function torsades(r, D) {
     return [
       { type: 'P', t: 0.1, m: 'normal', qrsT: 0.26 }, { type: 'QRS', t: 0.26, m: 'longqt' },
@@ -166,7 +208,7 @@
       pieges: ['FA à réponse rapide (> 150/min) : l’irrégularité devient difficile à voir, mesurer plusieurs RR', 'FA + QRS larges très rapides et irréguliers : penser à une pré-excitation (WPW), contre-indication aux freinateurs nodaux'],
       conduite: 'Évaluer la tolérance. Anticoagulation selon le score CHA₂DS₂-VA, contrôle de la fréquence (bêtabloquant) ou du rythme (cardioversion après ETO ou anticoagulation ≥ 3 semaines si > 48 h).',
       retenir: 'Irrégulièrement irrégulier sans P = FA jusqu’à preuve du contraire. Toujours penser anticoagulation.',
-      confond: ['flutter', 'arythmie', 'esa', 'fv']
+      confond: ['flutter', 'tam', 'fapx', 'arythmie', 'esa']
     },
     {
       id: 'flutter', cat: 'supra', title: 'Flutter atrial typique', tags: ['Concours', 'Piège'],
@@ -178,7 +220,7 @@
       pieges: ['Tachycardie régulière à 150/min = flutter 2:1 jusqu’à preuve du contraire', 'Une onde F sur deux se cache dans le QRS ou la T : la manœuvre vagale ou l’adénosine démasquent les dents de scie'],
       conduite: 'Même anticoagulation que la FA. Contrôle de fréquence souvent difficile ; traitement de choix : ablation de l’isthme cavo-tricuspide.',
       retenir: 'Dents de scie en DII–DIII–aVF à 300/min ; 150/min régulier = penser flutter 2:1.',
-      confond: ['fa', 'tachy', 'trin']
+      confond: ['fa', 'flutatyp', 'ta', 'tachy', 'trin']
     },
     {
       id: 'trin', cat: 'supra', title: 'Tachycardie jonctionnelle (TRIN)', tags: ['Concours'],
@@ -190,7 +232,115 @@
       pieges: ['Ne pas la confondre avec un flutter 2:1 (150/min, dents de scie)', 'Si les QRS sont larges : considérer comme une TV jusqu’à preuve du contraire'],
       conduite: 'Manœuvres vagales (Valsalva modifiée), puis adénosine (Striadyne) IV sous scope. Choc électrique si mauvaise tolérance. Ablation de la voie lente si récidives.',
       retenir: 'Régulière, fine, rapide, sans P, début brutal = TRIN. 1ʳᵉ ligne : manœuvre vagale puis adénosine.',
-      confond: ['flutter', 'tachy', 'tv']
+      confond: ['flutter', 'trav', 'tachy', 'tv']
+    },
+    {
+      id: 'ta', cat: 'supra', title: 'Tachycardie atriale focale', tags: ['Concours'],
+      short: 'Ondes P régulières à 136/min, non sinusales (négatives en DII–DIII–aVF), séparées par une ligne isoélectrique ; passage en 2:1 sans arrêt.',
+      spec: sp(atrial({ pp: 0.44, pr: 0.15, pm: 'atrialP', conduct: (i, t) => (t % 10) < 5.5 || i % 2 === 0 })),
+      marks: [{ lead: 'II', f: 'p', which: 'allP', label: 'P négatives en DII' }, { lead: 'R', f: 'rp', label: 'RP long > PR' }, { lead: 'R', f: 'window', t0: 6.1, t1: 9.6, label: 'Bloc 2:1 : la TA continue' }],
+      criteres: ['Tachycardie régulière, fréquence atriale 100–250/min', 'Onde P monomorphe de morphologie non sinusale (ici négative en inférieur : foyer bas situé)', 'Retour à la ligne isoélectrique entre les P (différence avec le flutter)', 'RP long (RP > PR) en conduction 1:1', 'Un bloc AV (2:1, Wenckebach) peut apparaître sans interrompre la tachycardie'],
+      mecanisme: 'Un foyer atrial unique (automatique, déclenché ou micro-réentrant) décharge plus vite que le nœud sinusal. L’activation atriale part de ce foyer : la forme de la P renseigne sur sa localisation. Le nœud AV n’est pas dans le circuit : il peut bloquer sans arrêter la tachycardie.',
+      pieges: ['Une P cachée dans la T peut faire croire à une TRIN : chercher une déformation de la T', 'TA avec bloc AV : penser à une intoxication digitalique', 'À 150/min en 2:1, la ligne isoélectrique entre les P la distingue du flutter'],
+      conduite: 'Manœuvre vagale ou adénosine : la tachycardie persiste avec un bloc AV (ou s’arrête parfois). Ralentir par bêtabloquant ou inhibiteur calcique. Ablation par cathéter si récidivante, incessante ou responsable d’une cardiomyopathie rythmique (ESC 2019).',
+      retenir: 'P non sinusale + ligne isoélectrique + RP long = tachycardie atriale. Le bloc AV ne l’arrête pas.',
+      confond: ['flutter', 'tachy', 'pjrt', 'trin']
+    },
+    {
+      id: 'tam', cat: 'supra', title: 'Tachycardie atriale multifocale', tags: ['Piège'],
+      short: 'Rythme rapide et irrégulier avec des ondes P d’au moins trois formes différentes et des PR variables.',
+      spec: sp(atrial({ pp: (i, r) => 0.44 + r() * 0.2, pr: (i, r) => 0.12 + r() * 0.08, pm: i => MAT[[0, 2, 1, 3, 2, 0, 3, 1][i % 8]] })),
+      marks: [{ lead: 'II', f: 'p', which: 'allP', label: '≥ 3 formes de P' }, { lead: 'R', f: 'window', t0: 3.2, t1: 6.4, label: 'PP, PR et RR irréguliers' }],
+      criteres: ['Fréquence > 100/min', 'Au moins 3 morphologies d’ondes P différentes dans une même dérivation', 'PP, PR et RR irréguliers', 'Ligne isoélectrique entre les P (différence avec la FA)'],
+      mecanisme: 'Plusieurs foyers atriaux s’allument à tour de rôle, souvent par activité déclenchée sur des oreillettes distendues et hypoxiques. Chaque foyer donne sa propre P, avec son propre PR.',
+      pieges: ['Ressemble à une FA à la palpation et sur un tracé rapide : chercher des P nettes', 'La cardioversion électrique et les antiarythmiques sont inefficaces'],
+      conduite: 'Traiter la cause : décompensation de BPCO, hypoxie, hypokaliémie, hypomagnésémie, intoxication à la théophylline. Ralentir si besoin (inhibiteur calcique, bêtabloquant cardiosélectif si toléré). Pas de cardioversion.',
+      retenir: 'Irrégulier + ≥ 3 formes de P = TAM : traiter le poumon, pas l’ECG.',
+      confond: ['fa', 'esa', 'arythmie', 'ta']
+    },
+    {
+      id: 'flutatyp', cat: 'supra', title: 'Flutter atypique', tags: [],
+      short: 'Activité atriale ondulante continue à 250/min, positive en inférieur, sans ligne isoélectrique, conduction AV variable.',
+      spec: sp(flutterVar({ off: 0.06, per: 0.24, delay: 0.2, ratio: [2, 2, 3, 2, 4, 3] }), { bg: [{ kind: 'flutterAtyp', period: 0.24, offset: 0.06 }] }),
+      marks: [{ lead: 'II', f: 'window', label: 'Ondulation continue, positive' }, { lead: 'R', f: 'rr', which: 2, label: 'Conduction variable' }],
+      criteres: ['Activité atriale organisée 250–350/min, sans ligne isoélectrique', 'Morphologie qui ne répond pas au flutter typique (ici ondes F positives en inférieur)', 'Conduction AV fixe ou variable', 'Terrain : cicatrice atriale (chirurgie cardiaque, ablation de FA, cardiopathie)'],
+      mecanisme: 'Une macro-réentrée tourne autour d’un obstacle autre que l’isthme cavo-tricuspide : cicatrice de chirurgie ou d’ablation, zone fibreuse de l’oreillette gauche. Le circuit est différent, donc la forme et la polarité des ondes F aussi.',
+      pieges: ['Une activité atriale continue à 250/min reste un flutter même sans dents de scie classiques', 'L’ablation de l’isthme cavo-tricuspide ne suffit pas : une cartographie est nécessaire'],
+      conduite: 'Anticoagulation comme pour la FA. Contrôle de fréquence, cardioversion. Ablation guidée par cartographie électro-anatomique en centre expert.',
+      retenir: 'Flutter atypique = activité atriale continue sans ligne isoélectrique, hors dents de scie classiques, sur oreillette cicatricielle.',
+      confond: ['flutter', 'fa', 'ta']
+    },
+    {
+      id: 'rja', cat: 'supra', title: 'Rythme jonctionnel accéléré', tags: [],
+      short: 'QRS fins réguliers à 85/min, précédés d’une P rétrograde (négative en DII) avec un PR court.',
+      spec: sp(regularQRS({ rr: 0.7, retro: -0.085 })),
+      marks: [{ lead: 'II', f: 'p', which: 'retro', label: 'P rétrograde, PR court' }, { lead: 'R', f: 'rr', label: 'RR 700 ms : 85/min' }],
+      criteres: ['Rythme régulier à QRS fins, 60–100/min (au-delà : tachycardie jonctionnelle)', 'P rétrograde (négative en DII, DIII, aVF) juste avant le QRS avec PR < 120 ms, cachée dans le QRS ou juste après', 'Début et fin progressifs (automatisme, pas de réentrée)'],
+      mecanisme: 'Le tissu jonctionnel, pacemaker de secours à 40–60/min, s’accélère et prend la commande. Il active les ventricules par les voies normales (QRS fins) et remonte vers les oreillettes en sens inverse (P rétrograde).',
+      pieges: ['Une P négative avec PR court peut évoquer une pré-excitation : ici pas d’onde delta, QRS fins', 'Peut s’accompagner d’une dissociation AV avec des P sinusales indépendantes'],
+      conduite: 'Chercher la cause : intoxication digitalique (doser, arrêter la digoxine), ischémie inférieure, myocardite, post-chirurgie cardiaque, hypokaliémie. Le plus souvent pas de traitement antiarythmique.',
+      retenir: 'QRS fins 60–100/min + P rétrograde à PR court = rythme jonctionnel accéléré : penser digoxine.',
+      confond: ['rsn', 'wpw', 'jet', 'trin']
+    },
+    {
+      id: 'jet', cat: 'supra', title: 'Tachycardie jonctionnelle ectopique', tags: [],
+      short: 'Tachycardie régulière à QRS fins (143/min) avec des P sinusales plus lentes, dissociées des QRS.',
+      spec: sp(regularQRS({ rr: 0.42, p: 0.85 })),
+      marks: [{ lead: 'R', f: 'p', which: 'allP', label: 'P sinusales dissociées' }, { lead: 'R', f: 'rr', which: 1, label: 'QRS fins, 143/min' }],
+      criteres: ['Tachycardie régulière à QRS fins, 110–250/min', 'Dissociation AV : P sinusales plus lentes que les QRS, sans lien fixe (ou P rétrogrades 1:1)', 'Parfois des captures sinusales', 'Début progressif, caractère souvent incessant'],
+      mecanisme: 'Un foyer automatique du faisceau de His ou de la jonction décharge plus vite que le sinus. Les ventricules suivent le foyer, les oreillettes suivent le sinus : deux pacemakers indépendants.',
+      pieges: ['Rare chez l’adulte, fréquente chez l’enfant après chirurgie cardiaque', 'Résiste à l’adénosine et à la cardioversion (automatisme)', 'QRS fins + dissociation AV : penser TJE ; QRS larges + dissociation : TV'],
+      conduite: 'Corriger les facteurs favorisants (catécholamines, fièvre, troubles électrolytiques). Amiodarone ; refroidissement modéré chez l’enfant. Ablation prudente (risque de BAV) chez l’adulte symptomatique.',
+      retenir: 'QRS fins rapides + P sinusales dissociées = tachycardie jonctionnelle ectopique.',
+      confond: ['trin', 'rja', 'bav3', 'tv']
+    },
+    {
+      id: 'trav', cat: 'supra', title: 'TRAV orthodromique', tags: ['Concours'],
+      short: 'Tachycardie régulière à QRS fins à 200/min, P rétrograde visible dans le segment ST, alternance électrique.',
+      spec: sp(regularQRS({ rr: 0.3, retro: 0.14, alt: 0.82 })),
+      marks: [{ lead: 'II', f: 'p', which: 'retro', label: 'P rétrograde dans le ST' }, { lead: 'R', f: 'rp', which: 1, label: 'RP > 70 ms' }, { lead: 'V4', f: 'qrs', which: 'all', label: 'Alternance électrique' }],
+      criteres: ['Tachycardie régulière à QRS fins, 150–250/min', 'P rétrograde dans le segment ST ou au début de la T : RP > 70 ms, RP < PR', 'Alternance électrique des QRS possible', 'Début et fin brutaux ; en rythme sinusal : pré-excitation (WPW) ou voie accessoire cachée'],
+      mecanisme: 'Le circuit est macroscopique : descente par le nœud AV et le His (QRS fins), remontée vers les oreillettes par la voie accessoire. Le trajet ventricule → voie accessoire → oreillette prend du temps : la P rétrograde arrive plus tard que dans la TRIN.',
+      pieges: ['La différence avec la TRIN tient à la position de la P : collée au QRS (TRIN) ou dans le ST (TRAV)', 'Une voie accessoire peut être cachée : l’ECG de base est alors normal'],
+      conduite: 'Comme la TRIN : manœuvres vagales, adénosine, choc électrique si mauvaise tolérance. Ablation de la voie accessoire en première intention si récidives ou pré-excitation (ESC 2019).',
+      retenir: 'Fine, régulière, rapide avec P rétrograde dans le ST (RP > 70 ms) = TRAV orthodromique.',
+      confond: ['trin', 'pjrt', 'ta', 'flutter']
+    },
+    {
+      id: 'travanti', cat: 'supra', title: 'TRAV antidromique', tags: ['Piège'],
+      short: 'Tachycardie régulière à QRS larges (190/min) entièrement pré-excités : elle imite une TV.',
+      spec: sp(regularQRS({ rr: 0.315, m: 'preex' })),
+      marks: [{ lead: 'R', f: 'qrs', which: 'all', label: 'QRS larges pré-excités' }, { lead: 'V1', f: 'delta', label: 'Empâtement initial' }],
+      criteres: ['Tachycardie régulière à QRS larges (≥ 120 ms), 150–250/min', 'QRS entièrement pré-excités : début empâté (onde delta) très marqué', 'P rétrograde le plus souvent invisible', 'Pré-excitation sur l’ECG de base en rythme sinusal'],
+      mecanisme: 'Le circuit tourne à l’envers : descente par la voie accessoire, qui active les ventricules de proche en proche (QRS large, delta maximale), puis remontée par le His et le nœud AV.',
+      pieges: ['Indiscernable d’une TV sur le seul tracé : traiter comme une TV en cas de doute', 'Plusieurs voies accessoires sont possibles'],
+      conduite: 'Mal tolérée : choc électrique synchronisé. Bien tolérée : antiarythmique IV en milieu spécialisé (ibutilide, procaïnamide, flécaïnide), choc si échec. Ablation de la voie accessoire (ESC 2019).',
+      retenir: 'Tachycardie à QRS larges sur WPW connu = TRAV antidromique possible, mais TV jusqu’à preuve du contraire.',
+      confond: ['tv', 'fapx', 'bbg', 'wpw']
+    },
+    {
+      id: 'fapx', cat: 'supra', title: 'FA pré-excitée (FA sur WPW)', tags: ['Urgence vitale', 'Concours'],
+      short: 'Rythme irrégulier très rapide (jusqu’à 250/min) avec des QRS larges de forme changeante.',
+      spec: sp(preexAF, { bg: [{ kind: 'af', amp: 0.8 }] }),
+      marks: [{ lead: 'R', f: 'window', t0: 0, t1: 2.6, label: 'Irrégulier, très rapide' }, { lead: 'R', f: 'qrs', which: 'preex', label: 'QRS large pré-excité' }, { lead: 'V2', f: 'window', label: 'Largeur variable' }],
+      criteres: ['RR totalement irréguliers, très rapides (souvent > 200/min)', 'QRS larges, de largeur variable d’un battement à l’autre (pré-excitation plus ou moins complète)', 'Quelques QRS fins intercalés', 'RR pré-excité le plus court < 250 ms : voie accessoire à haut risque'],
+      mecanisme: 'La FA bombarde les ventricules par deux routes : le nœud AV, qui filtre, et la voie accessoire, qui ne filtre pas. Chaque QRS est une fusion différente entre les deux, d’où des formes changeantes et une fréquence très élevée qui peut dégénérer en FV.',
+      pieges: ['Freinateurs nodaux contre-indiqués (adénosine, vérapamil, diltiazem, bêtabloquants, digoxine) : ils favorisent le passage par la voie accessoire et la FV', 'Amiodarone IV non recommandée', 'Ne pas confondre avec une FA + bloc de branche (QRS de largeur fixe) ou une TV polymorphe'],
+      conduite: 'Instable : choc électrique synchronisé immédiat. Stable : ibutilide ou procaïnamide IV (flécaïnide possible), choc si échec. Puis ablation de la voie accessoire (ESC 2019).',
+      retenir: 'Irrégulier + très rapide + QRS larges changeants = FA pré-excitée : choc, jamais de freinateur nodal.',
+      confond: ['fa', 'tv', 'tdp', 'wpw']
+    },
+    {
+      id: 'pjrt', cat: 'supra', title: 'Tachycardie de Coumel (PJRT)', tags: [],
+      short: 'Tachycardie régulière à QRS fins à 130/min, incessante, P négatives profondes en inférieur, RP long.',
+      spec: sp(regularQRS({ rr: 0.46, retro: 0.29, rm: 'retroDeep' })),
+      marks: [{ lead: 'II', f: 'p', which: 'retro', label: 'P négative profonde' }, { lead: 'R', f: 'rp', which: 1, label: 'RP > PR' }],
+      criteres: ['Tachycardie régulière à QRS fins, 120–200/min, incessante', 'P rétrograde négative profonde en DII, DIII, aVF (et V3–V6)', 'RP long : RP > PR', 'Reprend après quelques battements sinusaux'],
+      mecanisme: 'TRAV orthodromique qui utilise une voie accessoire à conduction lente et décrémentielle, le plus souvent postéroseptale. La remontée lente place la P rétrograde tard, juste avant le QRS suivant. Le circuit, toujours prêt, se relance sans cesse.',
+      pieges: ['Ressemble à une tachycardie atriale basse ou à une TRIN atypique (autres causes de RP long)', 'Incessante : risque de cardiomyopathie rythmique (dysfonction VG réversible)', 'Bien tolérée, souvent découverte chez l’enfant ou devant une insuffisance cardiaque'],
+      conduite: 'Ablation de la voie accessoire, traitement de choix. L’adénosine l’arrête transitoirement mais elle récidive. Surveiller la fonction VG.',
+      retenir: 'RP long + P négatives profondes en inférieur + incessante = PJRT (Coumel) : risque de cardiomyopathie rythmique.',
+      confond: ['ta', 'trav', 'trin', 'tachy']
     },
     {
       id: 'esv', cat: 'ventri', title: 'Extrasystoles ventriculaires', tags: ['Fréquent'],
@@ -536,5 +686,5 @@
 
   CASES.forEach(c => { c.catLabel = (CATS.find(k => k.id === c.cat) || {}).label; });
   const byId = id => CASES.find(c => c.id === id);
-  root.ECGCASES = { CATS, CASES, byId };
+  root.ECGCASES = { CATS, CASES, byId, GEN: { atrial, regularQRS, flutterVar, irregular, preexAF } };
 })(window);

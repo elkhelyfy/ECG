@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/app.css?v=3">
+<link rel="stylesheet" href="css/app.css?v=4">
 
 <header class="top">
   <div class="wrap top-in">
@@ -20,6 +20,7 @@
       <a href="#methode" data-view="methode"><span class="tn">3</span>Méthode</a>
       <a href="#atlas" data-view="atlas"><span class="tn">4</span>Atlas</a>
       <a href="#quiz" data-view="quiz"><span class="tn">5</span>Entraînement</a>
+      <a href="#supra" data-view="supra"><span class="tn">6</span>Supraventriculaire</a>
     </nav>
   </div>
 </header>
@@ -230,7 +231,7 @@
     <div class="wrap">
       <div class="intro compact">
         <p class="eyebrow">Atelier 4 · L’atlas</p>
-        <h2 class="h1"><span id="atlasCount">37</span> tracés commentés</h2>
+        <h2 class="h1"><span id="atlasCount">45</span> tracés commentés</h2>
       </div>
       <div class="atlas">
         <aside class="atlas-nav">
@@ -277,15 +278,146 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ 6. SUPRAVENTRICULAIRE ============ -->
+  <section class="view" id="view-supra" hidden>
+    <div class="wrap">
+      <div class="intro">
+        <p class="eyebrow">Atelier 6 · Troubles du rythme supraventriculaires</p>
+        <h2 class="h1">Au-dessus du faisceau de His</h2>
+        <p class="lede">Une arythmie est supraventriculaire quand elle naît au-dessus de la bifurcation du faisceau de His (nœud sinusal, oreillettes, jonction AV) ou quand elle emprunte une voie accessoire. Le QRS reste fin, sauf en cas de bloc de branche, d’aberration ou de pré-excitation.</p>
+      </div>
+
+      <!-- A. carte des mécanismes -->
+      <section class="sv-block" aria-labelledby="svMapTitle">
+        <div class="sv-head">
+          <p class="eyebrow">1 · Carte des mécanismes</p>
+          <h3 id="svMapTitle">D’où part l’arythmie, quel circuit elle emprunte</h3>
+          <p class="muted">Choisissez un trouble : son circuit s’anime au ralenti sur le schéma et son tracé s’imprime en DII.</p>
+        </div>
+        <div class="sv-map">
+          <figure class="card sv-heart">
+            <svg id="svHeart" viewBox="0 0 400 352" role="img" aria-label="Schéma du cœur : oreillettes, nœud sinusal, nœud AV, faisceau de His et voie accessoire, avec le circuit de l’arythmie choisie"></svg>
+            <figcaption class="sv-legend">
+              <span><i class="sw act"></i>Circuit ou foyer</span>
+              <span><i class="sw cond"></i>Tissu de conduction</span>
+              <span><i class="sw kent"></i>Voie accessoire</span>
+            </figcaption>
+          </figure>
+          <div class="sv-side">
+            <div class="sv-groups" id="svGroups"></div>
+            <div class="sv-detail" id="svDetail" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="scroll-x"><div id="svMapPaper"></div></div>
+      </section>
+
+      <!-- B. position de la P -->
+      <section class="sv-block" aria-labelledby="svRpTitle">
+        <div class="sv-head">
+          <p class="eyebrow">2 · Où est l’onde P ?</p>
+          <h3 id="svRpTitle">L’intervalle RP sépare les tachycardies régulières à QRS fins</h3>
+          <p class="muted">On mesure du début du QRS au début de la P rétrograde qui suit. Le seuil de 70 ms et la comparaison RP / PR orientent le mécanisme.</p>
+        </div>
+        <div class="seg" id="svRpSeg" role="group" aria-label="Type de tachycardie"></div>
+        <div class="sv-tl card" aria-hidden="true">
+          <div class="sv-tl-span" id="svTl">
+            <span class="sv-tl-axis"></span>
+            <span class="sv-tl-q a">QRS</span><span class="sv-tl-q b">QRS</span>
+            <span class="sv-tl-move" data-k="th"><span class="sv-tl-th"><i>70 ms</i></span></span>
+            <span class="sv-tl-bar rp"><i></i></span>
+            <span class="sv-tl-bar pr"><i></i></span>
+            <span class="sv-tl-move" data-k="p"><span class="sv-tl-p">P</span></span>
+            <span class="sv-tl-move" data-k="rpl"><span class="sv-tl-lab rp" id="svRpLab">RP</span></span>
+            <span class="sv-tl-move" data-k="prl"><span class="sv-tl-lab pr" id="svPrLab">PR</span></span>
+          </div>
+        </div>
+        <div class="scroll-x"><div id="svRpPaper"></div></div>
+        <div class="sv-read" id="svRpRead" aria-live="polite"></div>
+      </section>
+
+      <!-- C. adénosine -->
+      <section class="sv-block" aria-labelledby="svAdoTitle">
+        <div class="sv-head">
+          <p class="eyebrow">3 · Le test à l’adénosine</p>
+          <h3 id="svAdoTitle">Bloquer le nœud AV quelques secondes pour démasquer le mécanisme</h3>
+          <p class="muted">Si le nœud AV fait partie du circuit, la tachycardie s’arrête. S’il n’en fait pas partie, l’activité atriale continue et apparaît dans les pauses.</p>
+        </div>
+        <div class="sv-ado-bar">
+          <div class="seg" id="svAdoSeg" role="group" aria-label="Tachycardie à tester"></div>
+          <button class="btn sv-go" id="svAdoGo">Injecter l’adénosine</button>
+        </div>
+        <div class="scroll-x sv-print"><div id="svAdoPaper"></div></div>
+        <div class="sv-read" id="svAdoRead" aria-live="polite"></div>
+        <p class="sv-note">Adénosine : bolus IV rapide de 6 mg suivi d’un rinçage, puis 12 mg (jusqu’à 18 mg) si besoin, sous scope et défibrillateur à portée. Jamais devant une tachycardie irrégulière à QRS larges (FA pré-excitée).</p>
+      </section>
+
+      <!-- D. algorithme -->
+      <section class="sv-block" aria-labelledby="svAlgoTitle">
+        <div class="sv-head">
+          <p class="eyebrow">4 · Algorithme</p>
+          <h3 id="svAlgoTitle">Devant une tachycardie, quatre questions</h3>
+          <p class="muted">Répondez à partir du tracé. Touchez une étape déjà franchie pour revenir en arrière.</p>
+        </div>
+        <ol class="sv-trail" id="svTrail" aria-label="Réponses déjà données"></ol>
+        <div class="sv-q" id="svQ" aria-live="polite"></div>
+      </section>
+
+      <!-- E. synthèse -->
+      <section class="sv-block" aria-labelledby="svTabTitle">
+        <div class="sv-head">
+          <p class="eyebrow">5 · Synthèse</p>
+          <h3 id="svTabTitle">Toutes les arythmies supraventriculaires</h3>
+        </div>
+        <div class="sv-table-wrap"><table class="sv-table" id="svTable"></table></div>
+      </section>
+
+      <!-- F. recommandations -->
+      <section class="sv-block" aria-labelledby="svRecoTitle">
+        <div class="sv-head">
+          <p class="eyebrow">6 · Recommandations ESC</p>
+          <h3 id="svRecoTitle">Ce qui a changé</h3>
+        </div>
+        <div class="sv-recos">
+          <article class="tool">
+            <p class="ctl-label">ESC 2019 · Tachycardies supraventriculaires</p>
+            <ul class="sv-list">
+              <li>Première mise à jour en 16 ans : l’<b>ablation par cathéter</b> devient centrale (TRIN, TRAV, flutter typique, TA récidivante).</li>
+              <li>Phase aiguë d’une tachycardie régulière à QRS fins : <b>manœuvres vagales</b> (Valsalva modifiée), puis <b>adénosine</b>, puis vérapamil/diltiazem ou bêtabloquant ; choc synchronisé si instable.</li>
+              <li>Plusieurs molécules retirées de la prise en charge aiguë et chronique de la TRIN et de la TA focale (procaïnamide, sotalol, digoxine…).</li>
+              <li>FA pré-excitée : choc si instable ; sinon ibutilide ou procaïnamide. <b>Amiodarone IV non recommandée.</b></li>
+            </ul>
+          </article>
+          <article class="tool">
+            <p class="ctl-label">ESC 2024 · Fibrillation atriale</p>
+            <div class="sv-care">
+              <div><b>C</b><span>Comorbidités et facteurs de risque</span></div>
+              <div><b>A</b><span>Éviter l’AVC et la thrombo-embolie</span></div>
+              <div><b>R</b><span>Réduire les symptômes : fréquence et rythme</span></div>
+              <div><b>E</b><span>Évaluer et réévaluer en continu</span></div>
+            </div>
+            <p class="muted">Le parcours AF-CARE remplace ABC. Le score CHA₂DS₂-VA remplace CHA₂DS₂-VASc : le sexe féminin n’est plus compté.</p>
+          </article>
+          <article class="tool sv-calc">
+            <p class="ctl-label">Calculateur CHA₂DS₂-VA</p>
+            <div class="sv-checks" id="svChecks"></div>
+            <div class="sv-score" id="svScore" aria-live="polite"></div>
+          </article>
+        </div>
+        <p class="sv-src muted">Sources : <a href="https://doi.org/10.1093/eurheartj/ehz467" target="_blank" rel="noopener">ESC 2019 TSV (Eur Heart J)</a> · <a href="https://doi.org/10.1093/eurheartj/ehae176" target="_blank" rel="noopener">ESC 2024 FA (Eur Heart J)</a> · <a href="https://www.msdmanuals.com/fr/professional/troubles-cardiovasculaires/arythmies-cardiaques-spécifiques/arythmies-supraventriculaires-ectopiques" target="_blank" rel="noopener">MSD Manuals</a>. Vérifier les doses et classes de recommandation dans les textes originaux.</p>
+      </section>
+    </div>
+  </section>
 </main>
 
 <footer class="foot"><div class="wrap"><p>Tracés générés par un modèle dipolaire du cœur à visée pédagogique : ils reproduisent les critères diagnostiques, pas la variabilité d’un vrai patient. Outil d’apprentissage, pas de diagnostic.</p></div></footer>
 
-<script charset="utf-8" src="js/engine.js?v=3"></script>
-<script charset="utf-8" src="js/cases.js?v=3"></script>
-<script charset="utf-8" src="js/paper.js?v=3"></script>
-<script charset="utf-8" src="js/machine.js?v=3"></script>
-<script charset="utf-8" src="js/heart.js?v=3"></script>
-<script charset="utf-8" src="js/method.js?v=3"></script>
-<script charset="utf-8" src="js/atlas.js?v=3"></script>
-<script charset="utf-8" src="js/app.js?v=3"></script>
+<script charset="utf-8" src="js/engine.js?v=4"></script>
+<script charset="utf-8" src="js/cases.js?v=4"></script>
+<script charset="utf-8" src="js/paper.js?v=4"></script>
+<script charset="utf-8" src="js/machine.js?v=4"></script>
+<script charset="utf-8" src="js/heart.js?v=4"></script>
+<script charset="utf-8" src="js/method.js?v=4"></script>
+<script charset="utf-8" src="js/atlas.js?v=4"></script>
+<script charset="utf-8" src="js/supra.js?v=4"></script>
+<script charset="utf-8" src="js/app.js?v=4"></script>

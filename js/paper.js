@@ -125,10 +125,11 @@
         const a = mark.t0 != null ? mark.t0 : cell.t0 + 0.05, b = mark.t1 != null ? mark.t1 : cell.t1 - 0.05;
         return [[Math.max(a, cell.t0), Math.min(b, cell.t1)]].filter(r => r[1] > r[0]);
       }
-      if (f === 'p' && (mark.which === 'blocked' || mark.which === 'allP' || mark.which === 'ectopic')) {
+      if (f === 'p' && (mark.which === 'blocked' || mark.which === 'allP' || mark.which === 'ectopic' || mark.which === 'retro')) {
         let ps = P.filter(p => inWin(p.t - 0.01, p.t + p.dur));
         if (mark.which === 'blocked') ps = ps.filter(p => p.conducted === false);
         if (mark.which === 'ectopic') ps = ps.filter(p => p.m === 'ectopicP');
+        if (mark.which === 'retro') ps = ps.filter(p => /^retro/.test(p.m));
         return ps.map(p => [p.t - 0.01, p.t + p.dur]);
       }
       const full = Q.filter(q => inWin(q.t - 0.18, (q.tPeak || q.t) + 0.08));
@@ -153,6 +154,7 @@
           case 'u': out.push([q.tPeak + 0.1, q.tPeak + 0.27]); break;
           case 'qt': out.push([q.t, q.tPeak + q.morph.tEnd]); break;
           case 'beat': out.push([(pIn ? pIn.t : q.t) - 0.04, q.tPeak + 0.1]); break;
+          case 'rp': { const nx = P.find(p => p.t > q.t + 0.02 && p.t < q.t + 0.7); if (nx) out.push([q.t, nx.t]); break; }
           case 'rr': { const nx = Q[Q.indexOf(q) + 1]; if (nx) out.push([q.t + 0.03, nx.t + 0.03]); break; }
         }
       });
