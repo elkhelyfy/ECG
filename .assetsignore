@@ -1,0 +1,15 @@
+# Fichiers jamais publiés comme ressources statiques (secrets, code serveur, outillage)
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+.git
+.gitignore
+.wrangler
+node_modules
+worker
+wrangler.jsonc
+wrangler.toml
+package.json
+package-lock.json
+.playwright-mcp

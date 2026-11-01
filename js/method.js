@@ -100,6 +100,20 @@
     ol.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur = +b.dataset.i; renderStep(); }));
     paper = new root.Paper(document.getElementById('methodPaper'), { layout: '12' });
     normal = E.render(LIB.byId('rsn').spec(5));
+    if (root.Chat) root.Chat.attach(document.getElementById('methodPaper'), () => {
+      const s = STEPS[cur];
+      return {
+        key: 'step' + cur,
+        text: [`Vue : méthode de lecture, étape ${cur + 1} sur ${STEPS.length} « ${s.title} ».`,
+          'Tracé affiché : ECG normal de référence (rythme sinusal à 75/min), 12 dérivations avec bande de rythme DII.',
+          `Ce qu’il faut regarder : ${s.look}`, `Valeurs normales : ${s.norms.join(' ; ')}`,
+          `Si c’est anormal : ${s.bad.map(b => b[1]).join(' ; ')}`,
+          `Repères annotés : ${s.marks.map(m => m.label).filter(Boolean).join(', ')}`].join('\n'),
+        chips: [['Comment mesurer ici ?', `À l’étape « ${s.title} », comment mesurer concrètement sur ce tracé ?`],
+          ['Pourquoi c’est normal ?', `Pourquoi ce tracé est-il normal pour l’étape « ${s.title} » ?`]]
+          .concat(s.bad.slice(0, 1).map(([, t]) => [`Et si : ${t} ?`, `À l’étape « ${s.title} », à quoi ressemblerait ce tracé en cas de « ${t} » ? Qu’est-ce qui changerait ?`]))
+      };
+    });
     renderStep();
 
     fcPaper = new root.Paper(document.getElementById('fcPaper'), { layout: 'strip', leads: ['II'], rowH: 26, minK: 2.6 });

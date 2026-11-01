@@ -339,7 +339,7 @@
       const I = leads.I.map(v => -v), II = leads.III, III = leads.II, aVR = leads.aVL, aVL = leads.aVR;
       Object.assign(leads, { I, II, III, aVR, aVL });
     }
-    return { fs: FS, duration: D, N, leads, events };
+    return { fs: FS, duration: D, N, leads, events, bg: spec.bg || [] };
   }
 
   /* Un battement unique (pour les mini-complexes et l'animation du cœur) */

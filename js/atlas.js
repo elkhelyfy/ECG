@@ -66,6 +66,8 @@
     ap.annot = true;
     toolbar('atlas', ap, `<button class="tg ghost" id="atlasToMachine">Voir sur la machine</button>`);
     document.getElementById('atlasToMachine').addEventListener('click', () => { root.Machine.load(cur); location.hash = 'machine'; });
+    if (root.Chat) root.Chat.attach(document.getElementById('atlasPaper'), () =>
+      root.Chat.forCase(LIB.byId(cur), { extra: 'Vue : atlas, ECG 12 dérivations (DI à V6) avec une bande de rythme DII de 10 s.' }));
     const sel = document.getElementById('atlasSelect');
     LIB.CATS.forEach(cat => {
       const og = document.createElement('optgroup'); og.label = cat.label;
@@ -80,7 +82,7 @@
   }
 
   /* ---------- Quiz ---------- */
-  let qp, q = null;
+  let qp, q = null, qn = 0, quizChat = null;
   const score = store.get('ecg.score', { ok: 0, n: 0, streak: 0, best: 0 });
   function pickDistractors(c, rand) {
     const pool = c.confond.filter(id => LIB.byId(id));
@@ -97,7 +99,7 @@
     let c = pool[Math.floor(rand() * pool.length)];
     if (q && pool.length > 1 && c.id === q.c.id) c = pool[(pool.indexOf(c) + 1) % pool.length];
     const choices = [c.id].concat(pickDistractors(c, rand)).sort(() => rand() - 0.5);
-    q = { c, choices, done: false };
+    q = { c, choices, done: false, n: ++qn };
     qp.annot = false; document.getElementById('quizAnnot').setAttribute('aria-pressed', 'false');
     qp.set(E.render(c.spec(seed)), c.marks);
     document.getElementById('choices').innerHTML = choices.map(id => `<button class="choice" data-id="${id}">${LIB.byId(id).title}</button>`).join('');
@@ -107,7 +109,7 @@
   }
   function answer(id) {
     if (q.done) return;
-    q.done = true;
+    q.done = true; q.answer = id;
     const ok = id === q.c.id;
     score.n++; if (ok) { score.ok++; score.streak++; score.best = Math.max(score.best, score.streak); } else score.streak = 0;
     store.set('ecg.score', score); scoreUI();
@@ -124,6 +126,7 @@
       <ul>${c.criteres.slice(0, 3).map(x => `<li>${x}</li>`).join('')}</ul>
       <p><a href="#atlas" data-case="${c.id}">Ouvrir la fiche complète</a></p>`;
     document.getElementById('quizNext').textContent = 'Tracé suivant';
+    if (quizChat) quizChat.refresh();
   }
   function scoreUI() {
     document.getElementById('qScore').textContent = `${score.ok} / ${score.n}`;
@@ -140,6 +143,16 @@
     sel.addEventListener('change', next);
     document.getElementById('quizNext').addEventListener('click', next);
     document.getElementById('quizReset').addEventListener('click', () => { Object.assign(score, { ok: 0, n: 0, streak: 0, best: 0 }); store.set('ecg.score', score); scoreUI(); });
+    // l'assistant n'apparaît qu'après la réponse : il ne doit pas souffler le diagnostic
+    if (root.Chat) quizChat = root.Chat.attach(document.getElementById('quizPaper'), () => {
+      if (!q || !q.done) return { off: 'Répondez d’abord.', hide: true };
+      const given = LIB.byId(q.answer);
+      return root.Chat.forCase(q.c, {
+        key: 'quiz' + q.n,
+        extra: `Vue : entraînement (quiz), ECG 12 dérivations. L’étudiant a répondu « ${given ? given.title : '?'} » ; la bonne réponse est « ${q.c.title} ».`,
+        chips: given && given.id !== q.c.id ? [[`Pourquoi pas ma réponse ?`, `J’ai répondu « ${given.title} ». Pourquoi ce n’est pas ça, et quel signe aurait dû m’orienter vers « ${q.c.title} » ?`]] : []
+      });
+    }, { anchor: document.getElementById('feedback') });
     scoreUI(); next();
   }
 

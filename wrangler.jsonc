@@ -1,0 +1,14 @@
+{
+  // Worker « ecg » : site statique (racine du dépôt) + API de l'assistant (/api/*).
+  // Secrets à définir dans Cloudflare (Workers > ecg > Settings > Variables and Secrets) :
+  //   OPEN_ROUTER_API, CHAT_PASSWORD, et optionnellement OPENROUTER_MODEL.
+  // En local : fichier .env (voir .env.example) puis `npx wrangler dev`.
+  "name": "ecg",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true }
+}

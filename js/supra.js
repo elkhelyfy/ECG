@@ -111,8 +111,9 @@
       <circle class="sv-node av" cx="196" cy="172" r="8"/>`;
   }
 
-  let mapPaper;
+  let mapPaper, mapId = 'trin';
   function pickMap(id) {
+    mapId = id;
     const c = LIB.byId(id), grp = MAP.find(g => g.items.includes(id));
     const svg = $('svHeart'), fx = FX[id] || [];
     svg.dataset.lvl = grp.lvl;
@@ -153,8 +154,9 @@
       read: 'La P est plus proche du QRS suivant que du précédent. Tachycardie à RP long : <b>tachycardie atriale</b> (la plus fréquente), <b>PJRT de Coumel</b>, TRIN atypique, ou tachycardie sinusale si la P est sinusale.'
     }
   };
-  let rpPaper;
+  let rpPaper, rpK = 'trin';
   function setRp(k) {
+    rpK = k;
     const o = RP[k], f = o.rp / o.rr, rpMs = Math.round(o.rp * 1000), prMs = Math.round((o.rr - o.rp) * 1000);
     const tl = $('svTl'), mv = key => tl.querySelector(`[data-k="${key}"]`);
     mv('p').style.setProperty('--f', f);
@@ -232,9 +234,9 @@
       cases: ['ta']
     }
   };
-  let adoPaper, adoK = 'trin', adoAnim = null;
+  let adoPaper, adoK = 'trin', adoAnim = null, adoDone = false;
   function adoShow(k, inject) {
-    adoK = k;
+    adoK = k; adoDone = !!inject;
     const o = ADO[k], host = $('svAdoPaper'), read = $('svAdoRead');
     if (adoAnim) { adoAnim.cancel(); adoAnim = null; }
     adoPaper.set(E.render({ duration: 10, seed: 9, bg: o.bg, rhythm: (inject ? o.after : o.base)() }),
@@ -365,7 +367,7 @@
   /* =========================================================
      Fiche complète ouverte sur place : on ne quitte pas l'atelier
      ========================================================= */
-  let dlg, dlgPaper;
+  let dlg, dlgPaper, dlgId = null;
   function closeFiche(instant) {
     if (!dlg || !dlg.open || dlg.dataset.closing) return;
     if (instant === true || reduceMotion() || !dlg.animate) { dlg.close(); return; }
@@ -381,6 +383,7 @@
   function openFiche(id) {
     const c = LIB.byId(id);
     if (!c) return;
+    dlgId = id;
     if (!dlg) {
       dlg = $('svDialog');
       dlg.addEventListener('click', e => { if (e.target === dlg) closeFiche(); });
@@ -393,16 +396,53 @@
     $('svDlgFiche').innerHTML = root.Atlas.fiche(c);
     $('svDlgAtlas').dataset.case = id;
     if (!dlg.open) dlg.showModal();
-    if (!dlgPaper) { dlgPaper = new root.Paper($('svDlgPaper'), { layout: '12' }); dlgPaper.annot = true; papers.push(dlgPaper); }
+    if (!dlgPaper) {
+      dlgPaper = new root.Paper($('svDlgPaper'), { layout: '12' }); dlgPaper.annot = true; papers.push(dlgPaper);
+      if (root.Chat) root.Chat.attach($('svDlgPaper'), () => root.Chat.forCase(LIB.byId(dlgId), { extra: 'Vue : fiche ouverte depuis l’atelier supraventriculaire, ECG 12 dérivations avec bande de rythme DII.' }));
+    }
     dlgPaper.set(E.render(c.spec(17)), c.marks);
     dlg.querySelector('.sv-dlg-body').scrollTop = 0;
+  }
+
+  /* Assistant sous les tracés de l'atelier */
+  function initChat() {
+    const C = root.Chat;
+    if (!C) return;
+    C.attach($('svMapPaper'), () => C.forCase(LIB.byId(mapId), { extra: 'Vue : atelier supraventriculaire, carte des mécanismes ; bande DII de 10 s à 25 mm/s.' }));
+    C.attach($('svRpPaper'), () => {
+      const o = RP[rpK], rp = Math.round(o.rp * 1000), pr = Math.round((o.rr - o.rp) * 1000);
+      return {
+        key: 'rp' + rpK,
+        text: [`Vue : atelier « Où est l’onde P ? ». Bande DII à 50 mm/s d’une tachycardie régulière à QRS fins, profil « ${o.label} ».`,
+          `RR ${Math.round(o.rr * 1000)} ms (${Math.round(60 / o.rr)}/min), RP ${rp} ms, PR ${pr} ms. La P rétrograde et l’intervalle RP sont annotés.`,
+          `Explication affichée : ${C.plain(o.read)}`,
+          'Repères : RP < 70 ms = TRIN commune ; RP > 70 ms et RP < PR = TRAV orthodromique ; RP > PR = tachycardie à RP long (TA, PJRT, TRIN atypique).'].join('\n'),
+        chips: [['Pourquoi ce RP oriente-t-il ?', `Pourquoi un RP de ${rp} ms oriente-t-il vers ce mécanisme ?`],
+          ['Comment mesurer le RP ?', 'Comment mesurer le RP sur ce tracé, et dans quelle dérivation ?'],
+          ['Pourquoi le seuil de 70 ms ?', 'Pourquoi utilise-t-on le seuil de 70 ms pour séparer TRIN et TRAV ?']]
+      };
+    });
+    C.attach($('svAdoPaper'), () => {
+      const o = ADO[adoK];
+      return {
+        key: 'ado' + adoK + adoDone,
+        text: [`Vue : atelier « Test à l’adénosine ». Bande DII de 10 s. Tachycardie testée : ${o.label}. ${o.pre}`,
+          adoDone ? `L’adénosine a été injectée vers la 4e seconde. Résultat affiché : ${C.plain(o.read)}`
+            : 'L’adénosine n’a pas encore été injectée : seule la tachycardie de base est affichée.'].join('\n'),
+        chips: adoDone
+          ? [['Pourquoi ce résultat ?', 'Pourquoi l’adénosine a-t-elle eu cet effet sur ce tracé ?'],
+            ['Et sur les autres tachycardies ?', 'Que montrerait l’adénosine sur une TRIN, une TRAV, un flutter et une tachycardie atriale ? Compare avec ce tracé.']]
+          : [['Que va faire l’adénosine ?', 'Que va faire l’adénosine sur cette tachycardie, et pourquoi ?'],
+            ['Quelles précautions ?', 'Quelles précautions avant d’injecter de l’adénosine devant ce tracé ?']]
+      };
+    });
   }
 
   let inited = false;
   function init() {
     if (inited) return;
     inited = true;
-    initMap(); initRp(); initAdo(); algo(false); initTable(); initCalc();
+    initMap(); initRp(); initAdo(); algo(false); initTable(); initCalc(); initChat();
     // dans l'atelier, les liens « Fiche » ouvrent le panneau au lieu de basculer vers l'Atlas
     $('view-supra').addEventListener('click', e => {
       const a = e.target.closest('a[data-case]');

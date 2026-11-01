@@ -35,7 +35,7 @@
 
   const st = { rid: 'rsn', lead: 1, speed: 25, gain: 10, filter: true, sound: false, artef: false, run: true, swap: false, t: 0 };
   let buf = null, qrsTimes = [], cals = [], printLabels = [], audio = null, lastBeat = -1, last = 0;
-  let mon, strip, els = {};
+  let mon, strip, els = {}, chatBox = null;
 
   function build() {
     const c = LIB.byId(st.rid);
@@ -48,6 +48,7 @@
     spec.armSwap = st.swap || spec.armSwap;
     buf = E.render(spec);
     qrsTimes = buf.events.filter(e => e.type === 'QRS' && e.t >= 0).map(e => e.t);
+    if (chatBox) chatBox.refresh();
   }
   const D = () => buf.duration;
   function sample(lead, t) {
@@ -311,6 +312,13 @@
     build(); drawKnob(); drawPatient(); setLead(1, true); selectElec('V1'); setLead(1, true); meta();
     highlightLead('II');
     requestAnimationFrame(loop);
+    if (root.Chat) chatBox = root.Chat.attach(strip, () => root.Chat.forCase(LIB.byId(st.rid), {
+      extra: `Vue : appareil ECG simulé (moniteur + papier), dérivation affichée ${LEADS[st.lead] || 'II'}, ${st.speed} mm/s, ${st.gain} mm/mV`
+        + (st.swap ? ', électrodes des bras inversées' : '') + (st.artef ? ', artéfacts activés' : '') + (st.filter ? '' : ', filtre 50 Hz désactivé') + '.'
+    }), {
+      anchor: els.leadInfo,
+      data: () => ({ data: buf, speed: st.speed, gain: st.gain, shown: `appareil, dérivation ${LEADS[st.lead] || 'II'} au moniteur (analyse des 10 premières secondes de l’enregistrement en boucle)` })
+    });
   }
   root.Machine = {
     init,

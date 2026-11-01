@@ -9,6 +9,7 @@
   class Paper {
     constructor(host, o = {}) {
       this.host = host;
+      host.__paper = this; // l'assistant y lit le signal, les repères et la mesure au compas
       this.o = Object.assign({ layout: '12', leads: ['II'], rowH: 27, minK: 3.4, caliper: true, rhythmLead: 'II' }, o);
       this.speed = 25; this.gain = 10; this.annot = false;
       this.data = null; this.marks = []; this.cal = null;
@@ -21,7 +22,10 @@
       this.ro = new ResizeObserver(() => this.draw());
       this.ro.observe(host.parentElement || host);
     }
-    set(data, marks) { this.data = data; this.marks = marks || []; this.cal = null; this.draw(); }
+    set(data, marks) {
+      this.data = data; this.marks = marks || []; this.cal = null; this.draw();
+      this.host.dispatchEvent(new Event('ecg:set')); // l'assistant sous le tracé se met à jour
+    }
     rows() {
       if (this.o.layout === '12') return LAYOUT12;
       return this.o.leads.map(l => [l + '!']);
