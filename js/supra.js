@@ -41,83 +41,11 @@
     jet: 'Tachycardie jonctionnelle ectopique', trin: 'TRIN', trav: 'TRAV orthodromique', travanti: 'TRAV antidromique',
     pjrt: 'PJRT (Coumel)', fapx: 'FA pré-excitée'
   };
-  // calques animés du schéma allumés pour chaque trouble
-  const FX = {
-    tachy: ['sa', 'his'], esa: ['sa', 'esa', 'his'], ta: ['focus', 'his'], tam: ['multi', 'his'],
-    flutter: ['flutter', 'his'], flutatyp: ['flutatyp', 'his'], fa: ['fa', 'his'],
-    rja: ['jn', 'his'], jet: ['jn', 'sa', 'his'], trin: ['trin', 'his'],
-    trav: ['trav'], travanti: ['travanti'], pjrt: ['pjrt'], fapx: ['fa', 'kentdown', 'his']
-  };
-
-  const ell = (cx, cy, rx, ry, cw) => {
-    const s = cw ? 1 : 0;
-    return `M${cx - rx} ${cy} a${rx} ${ry} 0 1 ${s} ${2 * rx} 0 a${rx} ${ry} 0 1 ${s} ${-2 * rx} 0`;
-  };
-  const loop = (d, dur, arrows = true) =>
-    `<path class="sv-track" d="${d}"${arrows ? ' marker-mid="url(#svArr)" marker-end="url(#svArr)"' : ''}/><path class="sv-comet" pathLength="100" d="${d}" style="--dur:${dur}s"/>`;
-  const comet = (d, dur, delay = 0) => `<path class="sv-comet" pathLength="100" d="${d}" style="--dur:${dur}s;animation-delay:${delay}s"/>`;
-  const pulse = (x, y, delay = 0, dur = 1.6, cls = '') =>
-    `<circle class="sv-pulse ${cls}" cx="${x}" cy="${y}" r="9" style="--dur:${dur}s;animation-delay:${delay}s"/><circle class="sv-focus" cx="${x}" cy="${y}" r="4.5"/>`;
-
-  const P_LB = 'M196 172 L204 214 C226 246 256 270 286 292';
-  const P_RB = 'M196 172 L204 214 C188 250 170 280 150 300';
-  const P_ORTHO = 'M196 172 L204 214 C240 250 300 250 344 196 L338 150 C300 140 240 150 196 172';
-  const P_ANTI = 'M196 172 C240 150 300 140 338 150 L344 196 C300 250 240 250 204 214 L196 172';
-  const P_PJRT = 'M196 172 L204 214 C196 222 178 214 166 196 L170 150 C182 150 190 160 196 172';
-  const P_KENT = 'M338 150 L346 168 L334 178 L344 196 C330 240 305 270 286 292';
-  const WAVELETS = [[78, 96, 13, 0, 1.1], [128, 74, 11, 1, 1.4], [150, 128, 12, 0, 0.9], [96, 142, 10, 1, 1.3],
-    [250, 86, 13, 1, 1.2], [302, 70, 11, 0, 1.0], [318, 120, 12, 1, 1.5], [262, 130, 10, 0, 0.95]];
-
-  function heartSvg() {
-    return `
-      <defs>
-        <marker id="svArr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="sv-arrowhead" d="M1 1 L9 5 L1 9 z"/></marker>
-        <pattern id="svHatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0 V5" class="sv-hatch"/></pattern>
-      </defs>
-      <rect class="sv-vessel" x="82" y="0" width="34" height="58" rx="6"/>
-      <ellipse class="sv-atrium" cx="118" cy="112" rx="82" ry="66"/>
-      <ellipse class="sv-atrium" cx="282" cy="104" rx="78" ry="60"/>
-      <path class="sv-vent" d="M44 192 H356 C356 262 300 318 232 346 C150 320 44 270 44 192 Z"/>
-      <path class="sv-septum" d="M205 192 C210 250 222 300 232 340"/>
-      <path class="sv-ring" d="M36 184 H364"/>
-      <text class="sv-cav" x="46" y="92">OD</text><text class="sv-cav" x="236" y="68">OG</text>
-      <text class="sv-cav" x="104" y="262">VD</text><text class="sv-cav" x="282" y="262">VG</text>
-      <path class="sv-limit" d="M-40 214 H392"/>
-      <text class="sv-zone" x="-40" y="207">↑ SUPRA</text><text class="sv-zone" x="-40" y="228">↓ VENTRIC.</text>
-      <path class="sv-cond" d="M196 180 L204 214"/>
-      <path class="sv-cond" d="M204 214 C188 250 170 280 150 300"/><path class="sv-cond" d="M204 214 C226 246 256 270 286 292"/>
-      <path class="sv-kent" d="M338 150 L346 168 L334 178 L344 196"/>
-      <text class="sv-lab" x="352" y="177">Kent</text>
-      <text class="sv-lab" x="122" y="40">nœud sinusal</text>
-      <text class="sv-lab" x="182" y="177" text-anchor="end">nœud AV</text>
-      <text class="sv-lab" x="212" y="226">His</text>
-
-      <g data-fx="sa">${pulse(104, 56, 0, 1.4)}</g>
-      <g data-fx="esa">${pulse(240, 140, 0, 2.8, 'once')}</g>
-      <g data-fx="focus">${pulse(165, 150, 0, 1.1)}</g>
-      <g data-fx="multi">${pulse(70, 108, 0, 1.5)}${pulse(262, 74, 0.5, 1.5)}${pulse(165, 150, 1.0, 1.5)}</g>
-      <g data-fx="flutter"><ellipse class="sv-annulus" cx="130" cy="146" rx="22" ry="7"/><text class="sv-lab sm" x="130" y="164" text-anchor="middle">anneau tricuspide</text>${loop(ell(130, 138, 56, 30, 0), 2.6)}</g>
-      <g data-fx="flutatyp"><ellipse class="sv-scar" cx="298" cy="96" rx="16" ry="10"/><text class="sv-lab sm" x="298" y="62" text-anchor="middle">cicatrice</text>${loop(ell(298, 96, 40, 26, 1), 2.8)}</g>
-      <g data-fx="fa">${WAVELETS.map(([x, y, r, cw, d]) => loop(ell(x, y, r, r, cw), d, false)).join('')}</g>
-      <g data-fx="trin">${loop(ell(196, 156, 15, 9, 0), 1.3)}<text class="sv-lab sm" x="196" y="140" text-anchor="middle">voies lente / rapide</text></g>
-      <g data-fx="trav">${loop(P_ORTHO, 3)}</g>
-      <g data-fx="travanti">${loop(P_ANTI, 3)}</g>
-      <g data-fx="pjrt"><path class="sv-kent slow" d="M170 150 L164 166 L174 178 L166 196"/><text class="sv-lab sm" x="160" y="206" text-anchor="end">voie lente</text>${loop(P_PJRT, 2.4)}</g>
-      <g data-fx="kentdown">${comet(P_KENT, 0.9)}${comet(P_KENT, 0.9, 0.45)}</g>
-      <g data-fx="jn">${pulse(196, 172, 0, 1.3)}</g>
-      <g data-fx="his">${comet(P_LB, 1.4)}${comet(P_RB, 1.4)}</g>
-
-      <circle class="sv-node sa" cx="104" cy="56" r="7"/>
-      <circle class="sv-node av" cx="196" cy="172" r="8"/>`;
-  }
-
-  let mapPaper, mapId = 'trin';
+  let mapPaper, mapId = 'trin', sim = null;
   function pickMap(id) {
     mapId = id;
     const c = LIB.byId(id), grp = MAP.find(g => g.items.includes(id));
-    const svg = $('svHeart'), fx = FX[id] || [];
-    svg.dataset.lvl = grp.lvl;
-    svg.querySelectorAll('[data-fx]').forEach(g => g.classList.toggle('on', fx.includes(g.dataset.fx)));
+    $('svHeart').dataset.lvl = grp.lvl;
     $('svGroups').querySelectorAll('.sv-pick').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === id));
     $('svDetail').innerHTML = `<div class="sv-fade">
       <p class="eyebrow">${grp.label}</p>
@@ -125,15 +53,20 @@
       <p>${c.mecanisme}</p>
       <p class="sv-keep">${c.retenir}</p>
       <p>${link(id, 'Ouvrir la fiche complète')}</p></div>`;
-    mapPaper.set(E.render(c.spec(17)), onStrip(c.marks));
+    // un seul rendu pour le tracé et pour le cœur : ils montrent exactement les mêmes événements
+    const data = E.render(c.spec(17));
+    mapPaper.set(data, onStrip(c.marks));
+    sim.load(c, data, mapPaper);
   }
   function initMap() {
-    $('svHeart').setAttribute('viewBox', '-44 0 444 352');
-    $('svHeart').innerHTML = heartSvg();
     $('svGroups').innerHTML = MAP.map(g => `<div class="sv-group"><p class="a-cat">${g.label}</p><div class="sv-picks">${
       g.items.map(id => `<button class="sv-pick" data-id="${id}" aria-pressed="false">${SHORT[id]}</button>`).join('')}</div></div>`).join('');
     $('svGroups').querySelectorAll('.sv-pick').forEach(b => b.addEventListener('click', () => pickMap(b.dataset.id)));
     mapPaper = strip($('svMapPaper'));
+    sim = root.HeartSim.create($('svHeart'), {
+      stage: $('svStage'), phases: $('svPhases'), caption: $('svCaption'), transport: $('svTransport'),
+      play: $('svPlay'), prev: $('svPrev'), next: $('svNext'), speed: $('svSpeed'), scrub: $('svScrub'), time: $('svTime')
+    });
     pickMap('trin');
   }
 
@@ -452,5 +385,5 @@
       openFiche(a.dataset.case);
     });
   }
-  root.Supra = { init, redraw() { papers.forEach(p => p.draw()); } };
+  root.Supra = { init, redraw() { papers.forEach(p => p.draw()); if (sim) sim.frame(); } };
 })(window);

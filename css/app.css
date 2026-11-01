@@ -418,12 +418,17 @@ p.out { display: block; line-height: 1.7; }
 @media (hover: hover) and (pointer: fine) { .sv-links a:hover { text-decoration: underline; } }
 
 /* carte des mécanismes */
-.sv-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; }
-.sv-heart { margin: 0; padding: 12px; display: grid; gap: 8px; }
-.sv-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--ink-soft); }
+.sv-lab { padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.sv-groups { display: flex; flex-wrap: wrap; gap: 12px 26px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sv-group { display: grid; gap: 6px; align-content: start; }
+.sv-group .a-cat { margin: 0; }
+.sv-stage { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.sv-heart { margin: 0; padding: 10px 10px 12px; display: grid; gap: 8px; background: var(--bg); border-radius: 12px; }
+.sv-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--ink-soft); padding: 0 6px; }
 .sw.cond { background: var(--cond); } .sw.kent { background: var(--cool); }
-.sv-side { display: grid; gap: 14px; min-width: 0; }
-.sv-groups { display: grid; gap: 12px; }
+.sw.cool { background: var(--cool); opacity: 0.6; }
+.sw.imp { background: var(--cond); border-radius: 50%; box-shadow: 0 0 0 3px color-mix(in srgb, var(--cond) 35%, transparent); }
+.sv-side { display: grid; gap: 12px; min-width: 0; align-content: start; }
 .sv-picks { display: flex; flex-wrap: wrap; gap: 6px; }
 .sv-pick {
   border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 0.86rem; font-weight: 700; min-height: 36px;
@@ -432,50 +437,85 @@ p.out { display: block; line-height: 1.7; }
 .sv-pick:active { transform: scale(0.97); }
 .sv-pick[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
 @media (hover: hover) and (pointer: fine) { .sv-pick:hover { border-color: var(--fg); } }
-.sv-detail { background: var(--surface); border-left: 4px solid var(--accent); border-radius: 0 var(--r) var(--r) 0; padding: 16px 18px; min-height: 230px; }
+.sv-detail { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; min-height: 200px; }
 .sv-fade { display: grid; gap: 8px; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
 .sv-fade p { max-width: 70ch; }
 @starting-style { .sv-fade { opacity: 0; transform: translateY(6px); } }
 .sv-keep { font-weight: 700; }
 
+/* ce qui se passe à l'instant du curseur */
+.sv-now { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.sv-phases { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+/* pas de transition : l'état change plusieurs fois par seconde, il doit suivre le curseur sans traîner */
+.sv-phases li { font: 600 0.72rem var(--font-data); padding: 4px 8px; border-radius: 6px; background: var(--surface); color: var(--ink-soft); border: 1px solid var(--line); }
+.sv-phases li.on { border-color: transparent; }
+.sv-phases li.on[data-k="p"], .sv-phases li.on[data-k="qrs"] { background: var(--act); color: #fff; }
+.sv-phases li.on[data-k="pr"] { background: var(--cond); color: #1d1500; }
+.sv-phases li.on[data-k="st"] { background: var(--fg); color: var(--bg); }
+.sv-phases li.on[data-k="t"] { background: var(--cool); color: #fff; }
+.sv-caption { display: grid; gap: 6px; font-size: 0.92rem; min-height: 112px; align-content: start; }
+.sv-caption .row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; }
+.sv-caption .row[hidden] { display: none; }
+.sv-caption b { font: 600 0.68rem var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); padding-top: 3px; }
+
+/* lecture */
+.sv-transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sv-play {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); display: grid; place-items: center; flex: none;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease;
+}
+.sv-play:active { transform: scale(0.94); }
+.sv-play svg { width: 20px; height: 20px; fill: currentColor; }
+.sv-transport .i-pause, .sv-transport[data-playing="true"] .i-play { display: none; }
+.sv-transport[data-playing="true"] .i-pause { display: block; }
+.sv-step {
+  width: 38px; height: 38px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); font-size: 1.25rem; line-height: 1; font-weight: 700; flex: none;
+  transition: transform 160ms var(--ease-out), border-color 150ms ease;
+}
+.sv-step:active { transform: scale(0.95); }
+@media (hover: hover) and (pointer: fine) { .sv-play:hover { background: var(--accent); color: var(--on-accent); } .sv-step:hover { border-color: var(--fg); } }
+#svScrub { flex: 1; min-width: 140px; }
+.sv-time { min-width: 6.5ch; text-align: right; font-size: 0.9rem; }
+.sv-playhead { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; margin-left: -1px; background: var(--caliper); pointer-events: none; will-change: transform; }
+.sv-playhead::before { content: ""; position: absolute; top: -1px; left: -5px; width: 12px; height: 8px; border-radius: 0 0 6px 6px; background: var(--caliper); }
+
+/* le cœur simulé */
 #svHeart { width: 100%; height: auto; display: block; }
-#svHeart .sv-vessel, #svHeart .sv-atrium, #svHeart .sv-vent { fill: var(--muscle); stroke: var(--muscle-line); stroke-width: 1.5; transition: stroke 200ms ease, stroke-width 200ms ease; }
-#svHeart .sv-septum { fill: none; stroke: var(--muscle-line); stroke-width: 1.5; }
-#svHeart .sv-ring { stroke: var(--fg); stroke-width: 3; stroke-dasharray: 2 5; opacity: 0.4; fill: none; }
-#svHeart .sv-limit { stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 6 5; fill: none; }
-#svHeart .sv-zone { font: 600 9px var(--font-data); letter-spacing: 0.06em; fill: var(--ink-soft); }
-#svHeart .sv-cav { font: 800 15px var(--font-display); fill: var(--muscle-line); }
-#svHeart .sv-cond { fill: none; stroke: var(--cond); stroke-width: 3; stroke-linecap: round; opacity: 0.75; }
-#svHeart .sv-node { fill: var(--cond); stroke: var(--fg); stroke-width: 1.5; transition: stroke 200ms ease, stroke-width 200ms ease; }
-#svHeart .sv-kent { fill: none; stroke: var(--cool); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; transition: stroke-width 200ms ease; }
-#svHeart .sv-kent.slow { stroke-dasharray: 3 3; }
-#svHeart .sv-lab { font: 600 10.5px var(--font-data); fill: var(--fg); }
-#svHeart .sv-lab.sm { font-size: 8.5px; fill: var(--ink-soft); }
-#svHeart .sv-annulus { fill: var(--cavity); stroke: var(--muscle-line); stroke-width: 1.5; }
-#svHeart .sv-scar { fill: url(#svHatch); stroke: var(--ink-soft); stroke-width: 1.2; }
-#svHeart .sv-hatch { stroke: var(--ink-soft); stroke-width: 1.4; }
-#svHeart .sv-arrowhead { fill: var(--act); }
-#svHeart[data-lvl="sinus"] .sv-node.sa,
-#svHeart[data-lvl="junction"] .sv-node.av { stroke: var(--accent); stroke-width: 3.5; }
-#svHeart[data-lvl="atrial"] .sv-atrium { stroke: var(--accent); stroke-width: 2.5; }
-#svHeart[data-lvl="ap"] .sv-kent { stroke-width: 4.5; }
-#svHeart [data-fx] { opacity: 0; transition: opacity 240ms var(--ease-out); }
-#svHeart [data-fx].on { opacity: 1; }
-#svHeart [data-fx]:not(.on) * { animation-play-state: paused; }
-#svHeart .sv-track { fill: none; stroke: var(--act); stroke-width: 1.6; stroke-dasharray: 3 4; opacity: 0.6; }
-#svHeart .sv-comet {
-  fill: none; stroke: var(--act); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 9 91;
-  animation: sv-run var(--dur, 2.4s) linear infinite;
-}
-@keyframes sv-run { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
-#svHeart .sv-focus { fill: var(--act); }
-#svHeart .sv-pulse {
-  fill: none; stroke: var(--act); stroke-width: 2.5; vector-effect: non-scaling-stroke;
-  transform-box: fill-box; transform-origin: center; animation: sv-pulse var(--dur, 1.6s) var(--ease-out) infinite;
-}
-#svHeart .sv-pulse.once { animation-name: sv-pulse-once; }
-@keyframes sv-pulse { from { transform: scale(0.45); opacity: 0.9; } to { transform: scale(3.4); opacity: 0; } }
-@keyframes sv-pulse-once { 0% { transform: scale(0.45); opacity: 0.9; } 35%, 100% { transform: scale(3.4); opacity: 0; } }
+#svHeart .hs-vessel, #svHeart .hs-muscle { fill: var(--muscle); }
+#svHeart .hs-cav { fill: var(--cavity); }
+#svHeart .hs-outline { fill: none; stroke: var(--muscle-line); stroke-width: 1.6; transition: stroke 200ms ease, stroke-width 200ms ease; }
+#svHeart .hs-outline.thin { stroke-width: 1.1; }
+#svHeart .hs-ring { stroke: var(--fg); stroke-width: 3; stroke-dasharray: 2 5; opacity: 0.4; }
+#svHeart .hs-limit { stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 6 5; }
+#svHeart .hs-zone { font: 600 9px var(--font-data); letter-spacing: 0.06em; fill: var(--ink-soft); }
+#svHeart .hs-cavlab { font: 800 16px var(--font-display); fill: var(--muscle-line); }
+#svHeart .hs-tract { fill: none; stroke: var(--cond); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: 0.55; }
+#svHeart .hs-cond { fill: none; stroke: var(--cond); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
+#svHeart .hs-purk { fill: none; stroke: var(--cond); stroke-width: 1.4; stroke-linecap: round; opacity: 0.6; }
+#svHeart .hs-kent { fill: none; stroke: var(--cool); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; transition: stroke-width 200ms ease; }
+#svHeart .hs-kent.slow { stroke-dasharray: 3 3; }
+#svHeart .hs-node { fill: var(--cond); stroke: var(--fg); stroke-width: 1.5; transition: stroke 200ms ease, stroke-width 200ms ease; }
+#svHeart .hs-lab { font: 600 11px var(--font-data); fill: var(--fg); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+#svHeart .hs-lab.sm { font-size: 9px; fill: var(--ink-soft); }
+#svHeart .hs-annulus { fill: var(--cavity); stroke: var(--muscle-line); stroke-width: 1.5; }
+#svHeart .hs-scar { fill: url(#hsHatch); stroke: var(--ink-soft); stroke-width: 1.2; }
+#svHeart .hs-hatch { stroke: var(--ink-soft); stroke-width: 1.4; }
+#svHeart .hs-track { fill: none; stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: 0.5; }
+#svHeart .hs-arrow { fill: var(--fg); opacity: 0.7; }
+#svHeart .hs-fx { opacity: 0; transition: opacity 240ms var(--ease-out); }
+#svHeart .hs-fx.on { opacity: 1; }
+/* onde de dépolarisation : remplissage + front d'onde visible pendant qu'elle avance */
+#svHeart .hs-wave { fill: var(--act); stroke: none; }
+#svHeart .hs-wave.front { stroke: var(--act); stroke-width: 3; stroke-opacity: 1; }
+#svHeart .hs-wave.repol { fill: var(--cool); }
+#svHeart .hs-wave.soft { stroke-width: 1.5; }
+#svHeart .hs-dot .halo { fill: var(--cond); opacity: 0.35; }
+#svHeart .hs-dot .core { fill: var(--cond); stroke: var(--fg); stroke-width: 1.2; }
+#svHeart .hs-jn { fill: none; stroke: var(--cond); stroke-width: 2.5; }
+#svHeart .hs-x { stroke: var(--bad); stroke-width: 3.5; stroke-linecap: round; }
+#svHeart[data-lvl="sinus"] .hs-node.sa, #svHeart[data-lvl="junction"] .hs-node.av { stroke: var(--accent); stroke-width: 3.5; }
+#svHeart[data-lvl="atrial"] .hs-outline.atrium { stroke: var(--accent); stroke-width: 2.6; }
+#svHeart[data-lvl="ap"] .hs-kent { stroke-width: 4.5; }
 
 /* intervalle RP */
 .sv-tl { padding: 16px 0 12px; overflow: hidden; }
@@ -591,11 +631,17 @@ html:has(.sv-dlg[open]) { overflow: hidden; }
 .sv-dlg-body > .hint { margin-top: 6px; }
 
 @media (max-width: 1100px) {
-  .sv-map { grid-template-columns: 1fr; }
+  .sv-stage { grid-template-columns: 1fr; }
   .sv-recos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sv-calc { grid-column: 1 / -1; }
 }
 @media (max-width: 680px) {
+  /* sur téléphone, le cœur, la lecture et le tracé restent collés : l'explication passe en dessous */
+  .sv-lab { display: flex; flex-direction: column; padding: 12px; }
+  .sv-stage { display: contents; }
+  .sv-groups { order: 1; } .sv-heart { order: 2; } .sv-transport { order: 3; } .sv-lab > .scroll-x { order: 4; } .sv-side { order: 5; }
+  .sv-heart { padding: 4px 4px 10px; }
+  .sv-caption .row { grid-template-columns: 1fr; gap: 2px; }
   .sv-recos { grid-template-columns: 1fr; }
   .sv-tl-span { margin: 0 12%; }
   .sv-table thead { display: none; }
@@ -606,7 +652,7 @@ html:has(.sv-dlg[open]) { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
   /* sans mouvement : les flèches des circuits suffisent à montrer le sens */
-  #svHeart .sv-comet, #svHeart .sv-pulse { display: none; }
+  .hs-dot .halo { display: none; }
 }
 
 /* ---------- assistant sous les tracés ---------- */

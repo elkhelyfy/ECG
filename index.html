@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=13">
 
 <header class="top">
   <div class="wrap top-in">
@@ -293,23 +293,42 @@
         <div class="sv-head">
           <p class="eyebrow">1 · Carte des mécanismes</p>
           <h3 id="svMapTitle">D’où part l’arythmie, quel circuit elle emprunte</h3>
-          <p class="muted">Choisissez un trouble : son circuit s’anime au ralenti sur le schéma et son tracé s’imprime en DII.</p>
+          <p class="muted">Choisissez un trouble. Le cœur et le tracé DII avancent ensemble, au ralenti : à chaque instant, vous voyez d’où part l’influx, par où il passe et quelle onde il inscrit.</p>
         </div>
-        <div class="sv-map">
-          <figure class="card sv-heart">
-            <svg id="svHeart" viewBox="0 0 400 352" role="img" aria-label="Schéma du cœur : oreillettes, nœud sinusal, nœud AV, faisceau de His et voie accessoire, avec le circuit de l’arythmie choisie"></svg>
-            <figcaption class="sv-legend">
-              <span><i class="sw act"></i>Circuit ou foyer</span>
-              <span><i class="sw cond"></i>Tissu de conduction</span>
-              <span><i class="sw kent"></i>Voie accessoire</span>
-            </figcaption>
-          </figure>
-          <div class="sv-side">
-            <div class="sv-groups" id="svGroups"></div>
-            <div class="sv-detail" id="svDetail" aria-live="polite"></div>
+        <div class="sv-lab card">
+          <div class="sv-groups" id="svGroups" role="group" aria-label="Choisir un trouble du rythme"></div>
+          <div class="sv-stage" id="svStage">
+            <figure class="sv-heart">
+              <svg id="svHeart" viewBox="-56 0 506 400" role="img" aria-label="Cœur en coupe : l’onde de dépolarisation et l’influx avancent en même temps que le tracé"></svg>
+              <figcaption class="sv-legend">
+                <span><i class="sw act"></i>Dépolarisation</span>
+                <span><i class="sw cool"></i>Repolarisation</span>
+                <span><i class="sw imp"></i>Influx</span>
+                <span><i class="sw kent"></i>Voie accessoire</span>
+              </figcaption>
+            </figure>
+            <div class="sv-side">
+              <div class="sv-detail" id="svDetail"></div>
+              <div class="sv-now">
+                <p class="ctl-label">En ce moment sur le tracé</p>
+                <ol class="sv-phases" id="svPhases" aria-hidden="true"></ol>
+                <p class="sv-caption" id="svCaption"></p>
+              </div>
+            </div>
           </div>
+          <div class="sv-transport" id="svTransport">
+            <button class="sv-play" id="svPlay" aria-label="Lecture">
+              <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>
+              <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/></svg>
+            </button>
+            <button class="sv-step" id="svPrev" aria-label="Battement précédent">‹</button>
+            <button class="sv-step" id="svNext" aria-label="Battement suivant">›</button>
+            <div class="seg sm" id="svSpeed" role="group" aria-label="Vitesse de lecture"></div>
+            <input type="range" id="svScrub" min="0" max="10000" step="10" value="0" aria-label="Position dans le tracé">
+            <span class="num sv-time" id="svTime">0,00 s</span>
+          </div>
+          <div class="scroll-x"><div id="svMapPaper"></div></div>
         </div>
-        <div class="scroll-x"><div id="svMapPaper"></div></div>
       </section>
 
       <!-- B. position de la P -->
@@ -424,13 +443,14 @@
 
 <footer class="foot"><div class="wrap"><p>Tracés générés par un modèle dipolaire du cœur à visée pédagogique : ils reproduisent les critères diagnostiques, pas la variabilité d’un vrai patient. Outil d’apprentissage, pas de diagnostic.</p></div></footer>
 
-<script charset="utf-8" src="js/engine.js?v=8"></script>
-<script charset="utf-8" src="js/cases.js?v=8"></script>
-<script charset="utf-8" src="js/paper.js?v=8"></script>
-<script charset="utf-8" src="js/chat.js?v=8"></script>
-<script charset="utf-8" src="js/machine.js?v=8"></script>
-<script charset="utf-8" src="js/heart.js?v=8"></script>
-<script charset="utf-8" src="js/method.js?v=8"></script>
-<script charset="utf-8" src="js/atlas.js?v=8"></script>
-<script charset="utf-8" src="js/supra.js?v=8"></script>
-<script charset="utf-8" src="js/app.js?v=8"></script>
+<script charset="utf-8" src="js/engine.js?v=13"></script>
+<script charset="utf-8" src="js/cases.js?v=13"></script>
+<script charset="utf-8" src="js/paper.js?v=13"></script>
+<script charset="utf-8" src="js/chat.js?v=13"></script>
+<script charset="utf-8" src="js/machine.js?v=13"></script>
+<script charset="utf-8" src="js/heart.js?v=13"></script>
+<script charset="utf-8" src="js/method.js?v=13"></script>
+<script charset="utf-8" src="js/atlas.js?v=13"></script>
+<script charset="utf-8" src="js/heartsim.js?v=13"></script>
+<script charset="utf-8" src="js/supra.js?v=13"></script>
+<script charset="utf-8" src="js/app.js?v=13"></script>
